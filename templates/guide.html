@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Guide {{ exercise["exercise_name"] }}</h1>
+
+  <ul class="list-group">
+  {% for exercise_content in exercise["exercise_content"] %}
+  <li class="list-group-item">{{ exercise_content }}</li>
+  {% endfor %}
+  </ul>
+  <br><br>
+  <a href="{{ url_root }}guide/{{ guide_code }}/{{ next_exercise_number }}">Next Exercise</a>
+  <br>
+  <a href="{{ url_root }}guide/{{ guide_code }}/{{ previous_exercise_number }}">Previous Exercise</a>
+  <br><br>
+  <div>
+    <form method="POST" action="" autocomplete="off">
+      {{ form.hidden_tag() }}
+      <fieldset class="form-group">
+        <legend>Exercise Feedback</legend>
+        <div>
+          {{ form.feedback.label() }}:
+          {{ form.feedback() }}
+        </div>
+      </fieldset>
+      <div>
+        {{ form.feedbackSubmit() }}
+      </div>
+    </form>
+  </div>
+  <br>
+  <div>
+    <form method="POST" action="" autocomplete="off">
+      {{ pause_form.hidden_tag() }}
+      <div>
+        {{ pause_form.indicatePauseSubmit() }}
+      </div>
+    </form>
+  </div>
+{% endblock content %}
