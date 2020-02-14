@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
   <h1>Guide {{ exercise["exercise_name"] }}</h1>
-
   <ul class="list-group">
   {% for exercise_content in exercise["exercise_content"] %}
   <li class="list-group-item">{{ exercise_content }}</li>

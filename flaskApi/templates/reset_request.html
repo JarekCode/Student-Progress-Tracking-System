@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Register</h1>
+  <div class="content-section">
+    <form method="POST" action="">
+      {{ form.hidden_tag() }} <!-- XSS Forgery Token -->
+      <fieldset calss="form-group">
+        <legend class="border-bottom mb-4">Reset Password</legend>
+        <div class="form-group">
+          {{ form.email.label(class="form-control-label") }}
+          {% if form.email.errors %}
+            {{ form.email(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.email.errors %}
+                <span>{{ error }}</span>
+              {% endfor%}
+            </div>
+          {% else %}
+            {{ form.email(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+      </fieldset>
+      <div class="form-group">
+        {{ form.request_reset_password_form_submit(class="btn btn-outline-info") }}
+      </div>
+    </form>
+  </div>
+{% endblock content %}
