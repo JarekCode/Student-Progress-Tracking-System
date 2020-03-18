@@ -4,6 +4,7 @@ from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flaskApi.models import User
+import pymongo
 
 class RegisterForm(FlaskForm):
   # Form fields
@@ -68,6 +69,58 @@ class ResetPasswordForm(FlaskForm):
   password = PasswordField('Password', validators=[DataRequired()])
   confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
   reset_password_form_submit = SubmitField('Reset Password')
+
+
+class CreateGuideForm(FlaskForm):
+  # Form fields
+  guide_name = StringField('Guide Name', validators=[DataRequired()])
+  guide_code = StringField('Guide Code', validators=[DataRequired()])
+  create_guide_form_submit = SubmitField('Create Guide')
+
+  # Validate if an guide with the entered name already exists in the database
+  def validate_guide_name(self, guide_name):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in name from the database
+    name_res = mongodb_fyp_db.guides.find_one( {'guide_name': guide_name.data} )
+    mongoClient.close()
+    
+    # if it is not None, then it is in the database, then return error message
+    if(name_res):
+      raise ValidationError(f'The guide name "{guide_name.data}" already exists in the database. Please change the name')
+
+  # Validate if an guide with the entered code already exists in the database
+  def validate_guide_code(self, guide_code):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in code from the database
+    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
+    mongoClient.close()
+    
+    # if it is not None, then it is in the database, then return error message
+    if(code_res):
+      raise ValidationError(f'The guide code "{guide_code.data}" already exists in the database. Please change the code')
+
+
+class DeleteGuideForm(FlaskForm):
+  # Form fields
+  guide_code = StringField('Guide Code', validators=[DataRequired()])
+  delete_guide_form_submit = SubmitField('Delete Guide')
+
+  # Validate if an guide with the entered code already exists in the database
+  def validate_guide_code(self, guide_code):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in code from the database
+    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
+    mongoClient.close()
+
+    # if result is  None, then a guide with this code does not exist in the database
+    if(code_res is None):
+      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database. Please check the code')
 
 
 # For later development

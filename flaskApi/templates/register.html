@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block content %}
-  <h1>Register</h1>
   <div class="content-section">
     <form method="POST" action="">
       {{ form.hidden_tag() }} <!-- XSS Forgery Token -->
@@ -60,7 +59,7 @@
         </div>
       </fieldset>
       <div class="form-group">
-        {{ form.register_form_submit(class="btn btn-outline-info") }}
+        {{ form.register_form_submit(class="btn btn-outline-primary") }}
       </div>
     </form>
   </div>

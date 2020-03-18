@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Create Guide</legend>
+  <a class="btn btn-outline-success btn-block" role="button" href="{{ url_for('instructorGuideCreate') }}">Create Guide</a>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Guides</legend>
+  <br>
+  {% for guide in listOfGuides %}
+    <a class="btn btn-outline-dark btn-block col-md-4" role="button" href="/instructor/guide/edit/{{ guide['guide_code'] }}"><strong>{{ guide['guide_name'] }}</strong><br>Last Edited: {{ guide['last_edited_time'].strftime("%d") }} {{ guide['last_edited_time'].strftime("%b") }} {{ guide['last_edited_time'].strftime("%Y") }} {{ guide['last_edited_time'].strftime("%H") }}:{{ guide['last_edited_time'].strftime("%M") }} (UTC)</a><br>
+  {% endfor %}
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Delete Guide</legend>
+  <a class="btn btn-outline-danger btn-block" role="button" href="{{ url_for('instructorGuideDelete') }}">Delete Guide</a>
+</div>
+{% endblock content %}

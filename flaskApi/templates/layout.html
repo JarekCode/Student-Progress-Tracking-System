@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'main.css') }}">
+
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -8,63 +12,77 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'main.css') }}">
-
   {% if page_title %}
     <title>{{ page_title }}</title>
   {% else %}
-    <title>FYP MVP</title>
+    <title>Final Year Project</title>
   {% endif %}
 </head>
 <body>
-  <header class="site-header">
-    <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
-      <div class="container">
-        <a class="navbar-brand mr-4" href="/">FYP_MVP</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
+
+  <div class="wrapper d-flex align-items-stretch">
+    <nav id="sidebar">
+      <div class="custom-menu">
+        <button type="button" id="sidebarCollapse" class="btn btn-primary">
         </button>
-        <div class="collapse navbar-collapse" id="navbarToggle">
-          <div class="navbar-nav mr-auto">
-            <a class="nav-item nav-link" href="/">Home</a>
-            <a class="nav-item nav-link" href="{{ url_for('instructor') }}">Instructor</a>
-            <a class="nav-item nav-link" href="/guide/FTG/0">Temp Guide Shortcut</a>
-          </div>
-          <!-- Navbar Right Side -->
-          <div class="navbar-nav">
-            {% if current_user.is_authenticated %}
-            <a class="nav-item nav-link" href="{{ url_for('account') }}">{{ current_user.full_name }}</a>
-              <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
-            {% else %}
-              <a class="nav-item nav-link" href="{{ url_for('login') }}">Login</a>
-              <a class="nav-item nav-link" href="{{ url_for('register') }}">Register</a>
-            {% endif %}
-          </div>
+      </div>
+      <div class="img bg-wrap text-center py-4">
+        <div class="user-logo">
+          {% if current_user.is_authenticated %}
+            <h3>{{ current_user.full_name }}</h3>
+            <p>{{ current_user.role }}</p>
+          {% else %}
+            <h3> </h3>
+          {% endif %}
         </div>
       </div>
-    </nav>
-  </header>
-  <main role="main" class="container">
-    <div class="row">
-      <div class="col-md-8">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">
-                {{ message }}
-              </div>
-            {% endfor %}
+      <ul class="list-unstyled components mb-5">
+        <li><a href="/"><span class="fa fa-home mr-3"></span> Home</a></li>
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'student' %}
+            <li><a href="#"><span class="fa fa-cog mr-3"></span> Classes</a></li>
+            <li><a href="#"><span class="fa fa-cog mr-3"></span> Guides</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
+          {% elif current_user.role == 'instructor' %}
+            <li><a href="#"><span class="fa fa-cog mr-3"></span> Classes</a></li>
+            <li><a href="{{ url_for('instructorGuides') }}"><span class="fa fa-cog mr-3"></span> Guides</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
+          {% elif current_user.role == 'administrator' %}
+            <li><a href="#"><span class="fa fa-cog mr-3"></span> Manage Classes</a></li>
+            <li><a href="#"><span class="fa fa-cog mr-3"></span> Manage Instructors</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
           {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-      </div>
+        {% else %}
+          <li><a href="{{ url_for('login') }}"><span class="fa fa-sign-in mr-3"></span> Sign In</a></li>
+          <li><a href="{{ url_for('register') }}"><span class="fa fa-sign-in mr-3"></span> Register</a></li>
+        {% endif %}
+        <li><a class="nav-item nav-link" href="{{ url_for('instructor') }}">Temp Instructor</a></li>
+        <li><a class="nav-item nav-link" href="/guide/FTG/0">Temp Guide Shortcut</a></li>
+      </ul>
+    </nav>
+    <!-- Page Content  -->
+    <div id="content" class="p-4 p-md-5 pt-5">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
     </div>
-  </main>
+  </div>
 
   <!-- Optional JavaScript -->
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', filename = 'main.js') }}"></script>
 </body>
 </html>

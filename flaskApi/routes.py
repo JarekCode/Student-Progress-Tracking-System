@@ -1,6 +1,6 @@
 from flask import render_template, request, url_for, flash, redirect, session
 from flaskApi import app, db, bcrypt, mail, secretsFile
-from flaskApi.forms import RegisterForm, LoginForm, UpdateAccountForm, RequestPasswordResetForm, ResetPasswordForm, FeedbackForm, IndicatePauseForm
+from flaskApi.forms import RegisterForm, LoginForm, UpdateAccountForm, RequestPasswordResetForm, ResetPasswordForm, FeedbackForm, IndicatePauseForm, CreateGuideForm, DeleteGuideForm
 from flaskApi.templates import *
 from flaskApi.models import User
 from flask_login import login_user, logout_user, login_required, current_user
@@ -16,8 +16,13 @@ import json
 
 # MongoDB
 mongoClient = pymongo.MongoClient()
-mongodb_credentials = mongoClient.credentials
+mongodb_fyp_db = mongoClient.fyp_db
 mongodb_fyp_mvp = mongoClient.fyp_mvp
+
+
+#---------#
+# General #
+#---------#
 
 # Home
 @app.route('/')
@@ -108,7 +113,7 @@ def save_profile_picture(form_picture):
   # 4. Get the full path to where the picture will be saved
   picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_filename)
   # 5. Resize the image
-  size = (125, 125)
+  size = (250, 250)
   i = Image.open(form_picture)
   i.thumbnail(size)
   # 6. Save the resized picture to the file system
@@ -203,7 +208,7 @@ def reset_token(token):
     # Return redirect
     return redirect(url_for('home'))
   # Verify the token from the email, None if token not valid/expired
-  # User payload from database recieved if the token is valid
+  # User payload from the database is received if the token is valid
   user = User.verify_password_reset_token(token)
   if(user is None):
     flash('The token is invalid/expired.', 'warning')
@@ -224,9 +229,127 @@ def reset_token(token):
   # Return
   return render_template('reset_token.html', page_title = 'Reset Password', form = form)
 
+#------------#
+# Instructor #
+#------------#
+
+# View a list of all guides
+@app.route('/instructor/guides')
+@login_required
+def instructorGuides():
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get all guides from the DB
+  allGuides = mongodb_fyp_db.guides.find()
+  # List passed in to template to display all guides in DB
+  listOfGuides = []
+  # Add relevant info for all guides to list
+  for guide in allGuides:
+    listOfGuides.append({'guide_code': guide['guide_code'], 'guide_name': guide['guide_name'], 'last_edited_time': guide['last_edited_time']})
+  # Return
+  return render_template('instructorGuides.html', page_title = 'Guides', listOfGuides = listOfGuides)
+
+
+# Create a new guide
+@app.route('/instructor/guide/create', methods = ['GET', 'POST'])
+@login_required
+def instructorGuideCreate():
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Create Guide Form
+  form = CreateGuideForm()
+  # POST
+  if(form.validate_on_submit()):
+    # Extract the data from the form
+    guideCode = form.guide_code.data
+    guideName = form.guide_name.data
+    # Store the initial empty guide to MongoDB
+    info = {'guide_code': str(guideCode), 'guide_name': str(guideName), 'guide_content': [], 'last_edited_time': datetime.utcnow()}
+    mongodb_fyp_db.guides.insert_one(info)
+    # Flash Message: guide created
+    flash('The guide has been created!', 'success')
+    # Return
+    return redirect(url_for('instructorGuides'))
+  # GET
+  # Return
+  return render_template('instructorGuideCreate.html', page_title = 'Create Guide', form = form)
+
+
+# Edit a guide
+@app.route('/instructor/guide/edit/<guide_code>', methods = ['GET', 'POST'])
+@login_required
+def instructorGuideEdit(guide_code):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get the guide based on the code
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  
+  print('guideFromDb:', guideFromDb)
+  # If the guide is found, continue
+  if(guideFromDb):
+    # POST: save the edited info about the guide back to the database
+    if(request.method == 'POST'):
+      # Process string to json from QuillJS
+      guideString = request.values.get('guide')
+      guide = json.loads(guideString)
+      # Update guide_content in mongoDB
+      mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "guide_content": guide['ops'] } })
+      # Update guide last_edited_time
+      mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+      # Flash Message: guide updated
+      flash(f'The "{guideFromDb["guide_name"]}" guide has been updated!', 'success')
+      # Return
+      return redirect(url_for('instructorGuides'))
+
+    # GET
+    # Render the guide in QuillJS using javascript the the 'guideFromDb' variable passed into the template
+    # NOTE: 'guideContent' must use json.dumps
+    return render_template('instructorGuideEdit.html', guideContent = json.dumps(guideFromDb['guide_content']), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], page_title = "{} - Edit".format(guideFromDb['guide_name']))
+
+  # Else, return error that the guide was not found
+  else:
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+# Delete a guide
+@app.route('/instructor/guide/delete', methods = ['GET', 'POST'])
+@login_required
+def instructorGuideDelete():
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  pass
+
+  # Delete Guide Form
+  form = DeleteGuideForm()
+  # POST
+  if(form.validate_on_submit()):
+    # Retrieve the guide code from the form
+    guideCode = form.guide_code.data
+    # Delete the guide from mongoDB
+    mongodb_fyp_db.guides.delete_one({ "guide_code": guideCode })
+    # Flash Message: guide deleted
+    flash('The guide has been deleted!', 'success')
+    # Return
+    return redirect(url_for('instructorGuides'))
+
+  # GET
+  # Flash Message: warning
+  flash('Once the guide is deleted, all the guide data will be erased from the database!', 'danger')
+  # Return
+  return render_template('instructorGuideDelete.html', page_title = 'Delete Guide', form = form)
+
 
 # For later development
 
+#---------#
+# Student #
+#---------#
 
 @app.route('/instructor')
 @login_required

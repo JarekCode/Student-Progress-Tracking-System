@@ -4,8 +4,9 @@
     <div class="media">
       <img class="rounded-circle account-img" src="{{ image_file }}">
       <div class="media-body">
-        <h2 class="account-heading">{{ current_user.full_name }}</h2>
-        <p class="text-secondary">{{ current_user.email }} - {{ current_user.role }}</p>
+        <h3>{{ current_user.full_name }}</h3>
+        <p class="text-secondary">{{ current_user.email }} - {{ current_user.role }}<br>
+          Registered: {{ current_user.date_created.strftime("%d") }} {{ current_user.date_created.strftime("%b") }} {{ current_user.date_created.strftime("%Y") }}</p>
       </div>
     </div>
       <form method="POST" action="" enctype="multipart/form-data">
@@ -49,7 +50,7 @@
           </div>
         </fieldset>
         <div class="form-group">
-          {{ form.update_account_form_submit(class="btn btn-outline-info") }}
+          {{ form.update_account_form_submit(class="btn btn-outline-primary") }}
         </div>
       </form>
   </div>

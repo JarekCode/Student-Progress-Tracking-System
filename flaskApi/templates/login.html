@@ -1,11 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
-  <h1>Register</h1>
   <div class="content-section">
     <form method="POST" action="">
       {{ form.hidden_tag() }} <!-- XSS Forgery Token -->
       <fieldset calss="form-group">
-        <legend class="border-bottom mb-4">Login</legend>
+        <legend class="border-bottom mb-4">Log In</legend>
         <div class="form-group">
           {{ form.email.label(class="form-control-label") }}
           {% if form.email.errors %}
@@ -38,7 +37,7 @@
         </div>
       </fieldset>
       <div class="form-group">
-        {{ form.login_form_submit(class="btn btn-outline-info") }}
+        {{ form.login_form_submit(class="btn btn-outline-primary") }}
         <small class="text-muted ml-2">
           <a href="{{ url_for('reset_request') }}">Forgot Password?</a>
         </small>
