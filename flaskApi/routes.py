@@ -268,7 +268,7 @@ def instructorGuideCreate():
     guideCode = form.guide_code.data
     guideName = form.guide_name.data
     # Store the initial empty guide to MongoDB
-    info = {'guide_code': str(guideCode), 'guide_name': str(guideName), 'guide_content': [], 'last_edited_time': datetime.utcnow()}
+    info = {'guide_code': str(guideCode), 'guide_name': str(guideName), 'number_of_exercises': 0, 'last_edited_time': datetime.utcnow(), 'guide_content': []}
     mongodb_fyp_db.guides.insert_one(info)
     # Flash Message: guide created
     flash('The guide has been created!', 'success')
@@ -278,43 +278,6 @@ def instructorGuideCreate():
   # Return
   return render_template('instructorGuideCreate.html', page_title = 'Create Guide', form = form)
 
-
-# Edit a guide
-@app.route('/instructor/guide/edit/<guide_code>', methods = ['GET', 'POST'])
-@login_required
-def instructorGuideEdit(guide_code):
-  # Check if the person logged in is an instructor
-  if(current_user.role != 'instructor'):
-    return render_template('accessDenied.html', page_title = 'Access Denied')
-
-  # Get the guide based on the code
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
-  
-  print('guideFromDb:', guideFromDb)
-  # If the guide is found, continue
-  if(guideFromDb):
-    # POST: save the edited info about the guide back to the database
-    if(request.method == 'POST'):
-      # Process string to json from QuillJS
-      guideString = request.values.get('guide')
-      guide = json.loads(guideString)
-      # Update guide_content in mongoDB
-      mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "guide_content": guide['ops'] } })
-      # Update guide last_edited_time
-      mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
-      # Flash Message: guide updated
-      flash(f'The "{guideFromDb["guide_name"]}" guide has been updated!', 'success')
-      # Return
-      return redirect(url_for('instructorGuides'))
-
-    # GET
-    # Render the guide in QuillJS using javascript the the 'guideFromDb' variable passed into the template
-    # NOTE: 'guideContent' must use json.dumps
-    return render_template('instructorGuideEdit.html', guideContent = json.dumps(guideFromDb['guide_content']), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], page_title = "{} - Edit".format(guideFromDb['guide_name']))
-
-  # Else, return error that the guide was not found
-  else:
-    return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
 # Delete a guide
 @app.route('/instructor/guide/delete', methods = ['GET', 'POST'])
@@ -343,6 +306,103 @@ def instructorGuideDelete():
   flash('Once the guide is deleted, all the guide data will be erased from the database!', 'danger')
   # Return
   return render_template('instructorGuideDelete.html', page_title = 'Delete Guide', form = form)
+
+
+# View a list of all exercises in a given guide
+@app.route('/instructor/guide/<guide_code>', methods = ['GET', 'POST'])
+@login_required
+def instructorGuide(guide_code):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get the guide from MongoDB
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  # Check if 'guide_code' is correct and a guide is found
+  if(guideFromDb is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  return render_template('instructorGuideExercises.html', guide = guideFromDb, page_title = 'Guide Exercises')
+
+
+# Create a new exercise for a given guide
+@app.route('/instructor/guide/<guide_code>/createExercise')
+@login_required
+def instructorCreateExercise(guide_code):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get the guide from MongoDB
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  # Check if 'guide_code' is correct and a guide is found
+  if(guideFromDb is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  # Increment 'number_of_exercises' in MongoDB
+  # Update number_of_exercises in mongoDB
+  updated_number_of_exercises = guideFromDb['number_of_exercises'] + 1
+  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
+
+  # Add a new empty list to 'guide_content' in MongoDB
+  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$push": { "guide_content": [] } })
+
+  # Update 'last_edited_time' in MongoDB
+  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+
+  # Return
+  return redirect(url_for('instructorGuide', guide_code = guide_code))
+
+# Edit a given exercise in a given guide
+@app.route('/instructor/guide/<guide_code>/exercise/<exercise_number>', methods = ['GET', 'POST'])
+@login_required
+def instructorEditExercise(guide_code, exercise_number):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get the guide based on the code
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+
+  # Check if 'guide_code' is correct and a guide is found
+  if(guideFromDb is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  # Check if the exercise number is in the range of the actual guide stored in MongoDB
+  try:
+    if(int(exercise_number) <= 0 or int(exercise_number) > int(guideFromDb['number_of_exercises'])):
+      return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  except:
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  # POST: save the edited info about the guide back to the database
+  if(request.method == 'POST'):
+    # Process string to json from QuillJS
+    guideExerciseString = request.values.get('guide')
+    guide = json.loads(guideExerciseString)
+    # Update guide_content in MongoDB
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "guide_content." + str((int(exercise_number) - 1)): guide['ops'] } })
+    # Update guide last_edited_time
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+    # Flash Message: guide updated
+    flash(f'The "{guideFromDb["guide_name"]}" guide has been updated!', 'success')
+    # Return
+    return redirect(url_for('instructorGuide', guide_code = guide_code))
+
+  # Render the guide in QuillJS using javascript the the 'guideFromDb' variable passed into the template
+  # NOTE: 'guideContent' must use json.dumps
+  return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
+
+
+# Delete exercise from a given guide
+@app.route('/instructor/<guide_code>/deleteExercise')
+@login_required
+def instructorDeleteExercise(guide_code):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  pass
 
 
 # For later development

@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-2 text-center">{{ guide['guide_name'] }} [{{ guide['guide_code'] }}]</legend>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Create Exercise</legend>
+  <a class="btn btn-outline-success btn-block col-md-6" role="button" href="{{ url_for('instructorCreateExercise', guide_code = guide['guide_code']) }}">Create Exercise</a>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Exercises</legend>
+  <br>
+  {% for i in range(1, guide['number_of_exercises'] + 1) %}
+    <a class="btn btn-outline-dark btn-block col-md-6" role="button" href="{{ url_for('instructorEditExercise', guide_code = guide['guide_code'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong><br></a><br>
+  {% endfor %}
+</div>
+
+<!-- <div class="content-section">
+  <legend class="border-bottom mb-4">Delete Exercise</legend>
+  <a class="btn btn-outline-danger btn-block" role="button" href="{{ url_for('instructorGuideDelete') }}">Delete Exercise</a>
+</div> -->
+{% endblock content %}
