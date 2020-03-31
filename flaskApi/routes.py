@@ -1,12 +1,13 @@
 from flask import render_template, request, url_for, flash, redirect, session
 from flaskApi import app, db, bcrypt, mail, secretsFile
-from flaskApi.forms import RegisterForm, LoginForm, UpdateAccountForm, RequestPasswordResetForm, ResetPasswordForm, FeedbackForm, IndicatePauseForm, CreateGuideForm, DeleteGuideForm
+from flaskApi.forms import RegisterForm, LoginForm, UpdateAccountForm, RequestPasswordResetForm, ResetPasswordForm, FeedbackForm, IndicatePauseForm, CreateGuideForm, DeleteGuideForm, CreateClassForm, AddStudentToClassForm
 from flaskApi.templates import *
 from flaskApi.models import User
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
+from datetime import datetime, date
 from PIL import Image
 from flask_mail import Message
+from bson import ObjectId
 import pymongo
 import secrets
 import os
@@ -394,6 +395,9 @@ def instructorEditExercise(guide_code, exercise_number):
   return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
 
 
+#---------#
+#  TO-DO  #
+#---------#
 # Delete exercise from a given guide
 @app.route('/instructor/<guide_code>/deleteExercise')
 @login_required
@@ -401,15 +405,188 @@ def instructorDeleteExercise(guide_code):
   # Check if the person logged in is an instructor
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
+  return render_template('accessDenied.html', page_title = 'Access Denied')
 
-  pass
+
+# Classes Menu
+@app.route('/instructor/classes')
+@login_required
+def instructorClasses():
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  
+  # Get all classes from the DB
+  allClasses = mongodb_fyp_db.classes.find()
+  # List passed in to template to display all classes in DB
+  listOfClasses = []
+  # Add relevant info for all classes to list
+  for theClass in allClasses:
+    listOfClasses.append({'class_id': theClass['_id'], 'start_date': theClass['start_date'], 'finish_date': theClass['finish_date'], 'instructor_email': theClass['instructor_email'], 'guide_code': theClass['guide_code'], 'student_emails': theClass['student_emails']})
+
+  # Re-order the list by start_date
+  orderedClasses = sorted(listOfClasses, key=lambda k: k['start_date']) 
+  # Split the old classed into a second list
+  pastClasses = []
+  normalClasses = []
+  currentTime = datetime.utcnow()
+  for c in orderedClasses:
+    if(c['finish_date'] < currentTime):
+      pastClasses.append(c)
+    else:
+      normalClasses.append(c)
+
+  # Return
+  return render_template('instructorClasses.html', page_title = 'Classes', listOfClasses = normalClasses, listOfPastClasses = pastClasses)
+
+# Create a new class
+@app.route('/instructor/class/create', methods = ['GET', 'POST'])
+@login_required
+def instructorClassCreate():
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Create Class Form
+  form = CreateClassForm()
+  
+  # POST
+  if(form.validate_on_submit()):
+    # Extract the data from the form
+    classStartDate = form.start_date.data
+    classStartDateDT = datetime.combine(classStartDate, datetime.min.time())
+    classFinishDate = form.finish_date.data
+    classFinishDateDT = datetime.combine(classFinishDate, datetime.min.time())
+    instructorEmail = form.instructor_email.data
+    guideCode = form.guide_code.data
+
+    # Store the initial class to MongoDB
+    info = {'start_date': classStartDateDT, 'finish_date': classFinishDateDT, 'instructor_email': str(instructorEmail), 'guide_code': str(guideCode), 'student_emails': []}
+    mongodb_fyp_db.classes.insert_one(info)
+    # Flash Message: class created
+    flash('The class has been created!', 'success')
+    # Return
+    return redirect(url_for('instructorClasses'))
+  # GET
+  # Return
+  return render_template('instructorClassCreate.html', page_title = 'Create Class', form = form)
 
 
-# For later development
+# View a class
+@app.route('/instructor/class/<class_id>', methods = ['GET', 'POST'])
+@login_required
+def instructorClass(class_id):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  # Return the class
+  return render_template('instructorClassInfo.html', theClass = theClass, page_title = 'Class Info')
+
+
+# Add student to class
+@app.route('/instructor/class/<class_id>/addStudent', methods = ['GET', 'POST'])
+@login_required
+def instructorClassAddStudent(class_id):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  # Add the student to class
+  form = AddStudentToClassForm()
+  # POST
+  if(form.validate_on_submit()):
+    # Extract the data from the form
+    studentEmail = form.student_email.data.lower()
+    # If student email already in the list, just send a flash message saying so and don't add again
+    if(studentEmail in theClass['student_emails']):
+      # Flash Message: student added
+      flash(f'{studentEmail} is already in this class!', 'info')
+      # Return
+      return redirect(url_for('instructorClass', class_id = class_id))
+    # Else, Add the student to the list of students in MongoDB
+    else:
+      mongodb_fyp_db.classes.update_one({ "_id": ObjectId(class_id) }, { "$push": { "student_emails": studentEmail } })
+      # Flash Message: student added
+      flash(f'{studentEmail} added to class!', 'success')
+      # Return
+      return redirect(url_for('instructorClass', class_id = class_id))
+  # GET
+  return render_template('instructorAddStudentToClass.html', form = form, page_title = 'Add Student')
+
+# Remove student from class
+@app.route('/instructor/class/<class_id>/removeStudent/<student_email>', methods = ['GET', 'POST'])
+@login_required
+def instructorClassRemoveStudent(class_id, student_email):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  try:
+    # Remove the student from class
+    mongodb_fyp_db.classes.update_one({ "_id": ObjectId(class_id) }, { "$pull": { "student_emails": student_email } })
+    # Flash Message: student added
+    flash(f'{student_email} removed form class!', 'success')
+    # Return
+    return redirect(url_for('instructorClass', class_id = class_id))
+  except:
+    # Flash Message: error
+    flash(f'Failed to remove {student_email} form class!', 'danger')
+    # Return
+    return redirect(url_for('instructorClass', class_id = class_id))
+
+
+# Delete class
+@app.route('/instructor/class/<class_id>/deleteClass', methods = ['GET', 'POST'])
+@login_required
+def instructorDeleteClass(class_id):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  try:
+    # Remove the class
+    mongodb_fyp_db.classes.delete_one({ "_id": ObjectId(class_id) })
+    # Flash Message: class deleted
+    flash(f'[{theClass["guide_code"]}] Class deleted!', 'info')
+    # Return
+    return redirect(url_for('instructorClasses'))
+  except:
+    # Flash Message: error
+    flash(f'Failed to remove the {class_id} class!', 'danger')
+    # Return
+    return redirect(url_for('instructorClasses'))
+
+
 
 #---------#
 # Student #
 #---------#
+
+@app.route('/student/guide/<guide_code>/exercise/<exercise_number>', methods=['GET','POST'])
+@login_required
+def studentGuide(guide_code, exercise_number):
+  # Check if the person logged in is an student
+  if(current_user.role != 'student'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+
+
+
+# For later development
+
 
 @app.route('/instructor')
 @login_required

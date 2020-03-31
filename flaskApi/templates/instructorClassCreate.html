@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="content-section">
+    <legend class="border-bottom mb-4">Create Class</legend>
+    <form method="POST" action="">
+      {{ form.hidden_tag() }} <!-- XSS Forgery Token -->
+      <div class="form-group col-md-6">
+        {{ form.start_date.label(class="form-control-label") }}
+        {% if form.start_date.errors %}
+          {{ form.start_date(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.start_date.errors %}
+              <span>{{ error }}</span>
+            {% endfor%}
+          </div>
+        {% else %}
+          {{ form.start_date(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group col-md-6">
+        {{ form.finish_date.label(class="form-control-label") }}
+        {% if form.finish_date.errors %}
+          {{ form.finish_date(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.finish_date.errors %}
+              <span>{{ error }}</span>
+            {% endfor%}
+          </div>
+        {% else %}
+          {{ form.finish_date(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group col-md-6">
+        {{ form.instructor_email.label(class="form-control-label") }}
+        {% if form.instructor_email.errors %}
+          {{ form.instructor_email(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.instructor_email.errors %}
+              <span>{{ error }}</span>
+            {% endfor%}
+          </div>
+        {% else %}
+          {{ form.instructor_email(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group col-md-6">
+        {{ form.guide_code.label(class="form-control-label") }}
+        {% if form.guide_code.errors %}
+          {{ form.guide_code(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.guide_code.errors %}
+              <span>{{ error }}</span>
+            {% endfor%}
+          </div>
+        {% else %}
+          {{ form.guide_code(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group">
+        {{ form.create_class_form_submit(class="btn btn-outline-primary") }}
+      </div>
+    </form>
+  </div>
+{% endblock content %}

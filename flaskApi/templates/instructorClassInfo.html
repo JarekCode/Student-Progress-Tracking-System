@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-2 text-center"><span class="fa fa-users mr-3"></span>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }} - {{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }} [{{ theClass['guide_code'] }}]</legend>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Instructor Dashboard</legend>
+  <a class="btn btn-outline-primary btn-block col-md-6 offset-md-3" role="button" href="#">Instructor Dashboard</a>
+</div>
+
+<!-- Students Table -->
+<div class="content-section">
+  <legend class="border-bottom mb-4">Students</legend>
+  <table>
+    <tr>
+      <th class="text-center">Student Email</th>
+      <th></th>
+    </tr>
+    {% for email in theClass['student_emails'] %}
+    <tr>
+      <td class="text-center">{{ email }}</td>
+      <td class="text-center"><a class="btn btn-outline-danger" role="button" href="{{ url_for('instructorClassRemoveStudent', class_id = theClass['_id'], student_email = email) }}">Remove Student</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Add Student</legend>
+  <a class="btn btn-outline-success btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorClassAddStudent', class_id = theClass['_id']) }}">Add Student</a>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Class Information</legend>
+  <table>
+    <tr>
+      <th></th>
+    </tr>
+    <tr>
+      <td><strong>Start Date: </strong>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }}</td>
+    </tr>
+    <tr>
+      <td><strong>Finish Date: </strong>{{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }}</td>
+    </tr>
+    <tr>
+      <td><strong>Guide Code: </strong>{{ theClass['guide_code'] }}</td>
+    </tr>
+    <tr>
+      <td><strong>Instructor Email: </strong>{{ theClass['instructor_email'] }}</td>
+    </tr>
+    <tr>
+      <td><strong>Number Of Students: </strong>{{ theClass['student_emails']|length }}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Delete Class</legend>
+  <a class="btn btn-outline-danger btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorDeleteClass', class_id = theClass['_id']) }}">Delete Class</a>
+</div>
+
+<!-- Class Info -->
+
+{% endblock content %}

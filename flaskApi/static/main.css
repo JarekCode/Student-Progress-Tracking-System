@@ -28,7 +28,7 @@ th, td {
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
-
+sidebarCollapse
 tr:hover {background-color:#f5f5f5;}
 
 /* Custom sidebar by Colorlib V9 */
@@ -36,7 +36,7 @@ tr:hover {background-color:#f5f5f5;}
 #sidebar {
   min-width: 300px;
   max-width: 300px;
-  background: #32373d;
+  background: #35363a;
   color: #fff;
   -webkit-transition: all 0.3s;
   -o-transition: all 0.3s;
@@ -49,9 +49,8 @@ tr:hover {background-color:#f5f5f5;}
     #sidebar.active .custom-menu {
       margin-right: -50px; }
     #sidebar.active .btn.btn-primary:before {
-      content: "\f054";
-      font-family: "FontAwesome";
-      left: 2px !important; }
+      content: "\f0c9";
+      font-family: "FontAwesome"; }
     #sidebar.active .btn.btn-primary:after {
       display: none; }
   #sidebar h1 {
@@ -123,7 +122,7 @@ tr:hover {background-color:#f5f5f5;}
         -o-transition: none;
         transition: none; } }
     #sidebar .custom-menu .btn.btn-primary {
-      background: #007bff;
+      background: #2f89fc;
       border-color: transparent;
       position: relative;
       color: #000;
@@ -138,8 +137,7 @@ tr:hover {background-color:#f5f5f5;}
         font-family: "FontAwesome";
         color: #fff; }
       #sidebar .custom-menu .btn.btn-primary:after {
-        content: "\f053";
-        right: 2px; }
+        content: "\f0c9"; }
 
 .bg-wrap {
   width: 100%;
@@ -223,6 +221,6 @@ a[data-toggle="collapse"] {
     color: rgba(255, 255, 255, 0.5); }
 
 .subscribe-form .form-control {
-  background: #4897fc; }
+  background: #2f89fc; }
 
   /* End of Custom sidebar by Colorlib V9 */

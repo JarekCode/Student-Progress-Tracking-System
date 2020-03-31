@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms.fields.html5 import DateField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flaskApi.models import User
 import pymongo
@@ -88,7 +89,7 @@ class CreateGuideForm(FlaskForm):
     
     # if it is not None, then it is in the database, then return error message
     if(name_res):
-      raise ValidationError(f'The guide name "{guide_name.data}" already exists in the database. Please change the name')
+      raise ValidationError(f'The guide name "{guide_name.data}" already exists in the database.')
 
   # Validate if an guide with the entered code already exists in the database
   def validate_guide_code(self, guide_code):
@@ -101,7 +102,7 @@ class CreateGuideForm(FlaskForm):
     
     # if it is not None, then it is in the database, then return error message
     if(code_res):
-      raise ValidationError(f'The guide code "{guide_code.data}" already exists in the database. Please change the code')
+      raise ValidationError(f'The guide code "{guide_code.data}" already exists in the database.')
 
 
 class DeleteGuideForm(FlaskForm):
@@ -120,7 +121,47 @@ class DeleteGuideForm(FlaskForm):
 
     # if result is  None, then a guide with this code does not exist in the database
     if(code_res is None):
-      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database. Please check the code')
+      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database.')
+
+
+class CreateClassForm(FlaskForm):
+  # Form fields
+  start_date = DateField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
+  finish_date = DateField('Finish Date', format='%Y-%m-%d', validators=[DataRequired()])
+  instructor_email = StringField('Instructor Email', validators=[DataRequired(), Email()])
+  guide_code = StringField('Guide Code', validators=[DataRequired()])
+  create_class_form_submit = SubmitField('Create Class')
+
+  # Validate if an account with email passed in is already in the database
+  def validate_email(self, email):
+    # Get user from database by email. Will be None if email not taken
+    user = User.query.filter_by(email = email.data.lower()).first()
+    # If user is None, the email address does not exist in the database
+    if(user is None):
+      raise ValidationError('This email address does not exists in the database.')
+    # If user role is not instructor, that person cannot teach a class.
+    if(user.role != 'instructor'):
+      raise ValidationError('This email address is not a valid instructor email.')
+
+  # Validate if an guide with the entered code already exists in the database
+  def validate_guide_code(self, guide_code):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in code from the database
+    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
+    mongoClient.close()
+
+    # if result is  None, then a guide with this code does not exist in the database
+    if(code_res is None):
+      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database.')
+
+
+class AddStudentToClassForm(FlaskForm):
+  # Form fields
+  student_email = StringField('Student Email', validators=[DataRequired(), Email()])
+  add_student_to_class_form_submit = SubmitField('Add Student')
+  # No email is database validation as the stundet might not yet have an account
 
 
 # For later development
