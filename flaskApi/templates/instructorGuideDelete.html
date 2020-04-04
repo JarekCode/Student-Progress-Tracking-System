@@ -4,16 +4,16 @@
     <form method="POST" action="">
       {{ form.hidden_tag() }} <!-- XSS Forgery Token -->
       <div class="form-group col-md-6">
-        {{ form.guide_code.label(class="form-control-label") }}
-        {% if form.guide_code.errors %}
-          {{ form.guide_code(class="form-control form-control-lg is-invalid") }}
+        {{ form.guide_name.label(class="form-control-label") }}
+        {% if form.guide_name.errors %}
+          {{ form.guide_name(class="form-control form-control-lg is-invalid") }}
           <div class="invalid-feedback">
-            {% for error in form.guide_code.errors %}
+            {% for error in form.guide_name.errors %}
               <span>{{ error }}</span>
             {% endfor%}
           </div>
         {% else %}
-          {{ form.guide_code(class="form-control form-control-lg") }}
+          {{ form.guide_name(class="form-control form-control-lg") }}
         {% endif %}
       </div>
       <div class="form-group">

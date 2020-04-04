@@ -9,9 +9,9 @@
 
   {% if exerciseNumber == "1" %}
   {% else %}
-  <a class="btn btn-outline-primary float-left" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_code = guideCode, exercise_number = p_exercise_number) }}">Previous Exercise</a>
+  <a class="btn btn-outline-primary float-left" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_name = guideName, exercise_number = p_exercise_number) }}">Previous Exercise</a>
   {% endif %}
-  <a class="btn btn-outline-primary float-right" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_code = guideCode, exercise_number = n_exercise_number) }}">Next Exercise</a>
+  <a class="btn btn-outline-primary float-right" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_name = guideName, exercise_number = n_exercise_number) }}">Next Exercise</a>
 
 
   <!-- Include the Quill library -->

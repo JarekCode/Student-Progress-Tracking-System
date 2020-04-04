@@ -4,14 +4,14 @@
 
   <table>
     <tr>
-      <th>Guide Code</th>
+      <th>Guide Name</th>
       <th>Exercise Num.</th>
       <th>Action</th>
       <th>Time</th>
     </tr>
       {% for info in student_stats %}
       <tr>
-        <td> {{ info.guide_code }} </td>
+        <td> {{ info.guide_name }} </td>
         <td> {{ info.exercise_number }} </td>
         <td> {{ info.action }} </td>
         <td> {{ info.time }} </td>
@@ -21,13 +21,13 @@
   <br><br>
   <table>
     <tr>
-      <th>Guide Code</th>
+      <th>Guide Name</th>
       <th>Exercise Num.</th>
       <th>Feedback</th>
     </tr>
       {% for feedback in student_feedback %}
       <tr>
-        <td> {{ feedback.guide_code }} </td>
+        <td> {{ feedback.guide_name }} </td>
         <td> {{ feedback.exercise_number }} </td>
         <td> {{ feedback.student_feedback }} </td>
       </tr>

@@ -5,12 +5,12 @@
   <div class="content-section">
     <form method="POST" action="">
       <div class="form-group">
-        <legend class="border-bottom mb-4 text-center"><span class="fa fa-book mr-3"></span>{{ guideName }} [{{ guideCode }}] | Exercise {{exerciseNumber}}</legend>
+        <legend class="border-bottom mb-4 text-center"><span class="fa fa-book mr-3"></span>{{ guideName }} | Exercise {{ exercise_number }}</legend>
         <input name="guide" type="hidden">
         <div id="editor-container"></div>
       </div>
       <button class="btn btn-outline-primary" type="submit">Save Exercise</button>
-      <a class="btn btn-outline-danger float-right" role="button" href="{{ url_for('instructorDeleteExercise', guide_code = guideCode, exercise_number = exerciseNumber) }}">Delete Exercise</a>
+      <a class="btn btn-outline-danger float-right" role="button" href="{{ url_for('instructorDeleteExercise', guide_name = guideName, exercise_number = exercise_number) }}">Delete Exercise</a>
     </form>
   </div>
 

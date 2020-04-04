@@ -4,14 +4,14 @@
 <div class="content-section">
   <legend class="border-bottom mb-4"><span class="fa fa-users mr-3"></span>Classes</legend>
   {% for class in listOfClasses %}
-    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('studentGuideExercise', class_id = class['_id'], guide_code = class['guide_code'], exercise_number = 1) }}"><strong>{{ class['start_date'].strftime("%d") }} {{ class['start_date'].strftime("%b") }} {{ class['start_date'].strftime("%Y") }} - {{ class['finish_date'].strftime("%d") }} {{ class['finish_date'].strftime("%b") }} {{ class['finish_date'].strftime("%Y") }}</strong><br>Guide Code: <strong>{{ class['guide_code'] }}</strong></a><br>
+    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('studentGuideExercise', class_id = class['_id'], guide_name = class['guide_name'], exercise_number = 1) }}"><strong>{{ class['start_date'].strftime("%d") }} {{ class['start_date'].strftime("%b") }} {{ class['start_date'].strftime("%Y") }} - {{ class['finish_date'].strftime("%d") }} {{ class['finish_date'].strftime("%b") }} {{ class['finish_date'].strftime("%Y") }}</strong><br>Guide: <strong>{{ class['guide_name'] }}</strong></a><br>
   {% endfor %}
 </div>
 
 <div class="content-section">
   <legend class="border-bottom mb-4"><span class="fa fa-clock-o mr-3"></span>Past Classes</legend>
   {% for class in listOfPastClasses %}
-    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('studentGuideExercise', class_id = class['_id'], guide_code = class['guide_code'], exercise_number = 1) }}"><strong>{{ class['start_date'].strftime("%d") }} {{ class['start_date'].strftime("%b") }} {{ class['start_date'].strftime("%Y") }} - {{ class['finish_date'].strftime("%d") }} {{ class['finish_date'].strftime("%b") }} {{ class['finish_date'].strftime("%Y") }}</strong><br>Guide Code: <strong>{{ class['guide_code'] }}</strong></a><br>
+    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('studentGuideExercise', class_id = class['_id'], guide_name = class['guide_name'], exercise_number = 1) }}"><strong>{{ class['start_date'].strftime("%d") }} {{ class['start_date'].strftime("%b") }} {{ class['start_date'].strftime("%Y") }} - {{ class['finish_date'].strftime("%d") }} {{ class['finish_date'].strftime("%b") }} {{ class['finish_date'].strftime("%Y") }}</strong><br>Guide: <strong>{{ class['guide_name'] }}</strong></a><br>
   {% endfor %}
 </div>
 {% endblock content %}

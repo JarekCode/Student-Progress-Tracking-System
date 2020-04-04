@@ -248,7 +248,7 @@ def instructorGuides():
   listOfGuides = []
   # Add relevant info for all guides to list
   for guide in allGuides:
-    listOfGuides.append({'guide_code': guide['guide_code'], 'guide_name': guide['guide_name'], 'last_edited_time': guide['last_edited_time']})
+    listOfGuides.append({'guide_name': guide['guide_name'], 'last_edited_time': guide['last_edited_time']})
   # Return
   return render_template('instructorGuides.html', page_title = 'Guides', listOfGuides = listOfGuides)
 
@@ -266,10 +266,9 @@ def instructorGuideCreate():
   # POST
   if(form.validate_on_submit()):
     # Extract the data from the form
-    guideCode = form.guide_code.data
     guideName = form.guide_name.data
     # Store the initial empty guide to MongoDB
-    info = {'guide_code': str(guideCode), 'guide_name': str(guideName), 'number_of_exercises': 0, 'last_edited_time': datetime.utcnow(), 'guide_content': []}
+    info = {'guide_name': str(guideName), 'number_of_exercises': 0, 'last_edited_time': datetime.utcnow(), 'guide_content': []}
     mongodb_fyp_db.guides.insert_one(info)
     # Flash Message: guide created
     flash('The guide has been created!', 'success')
@@ -293,10 +292,10 @@ def instructorGuideDelete():
   form = DeleteGuideForm()
   # POST
   if(form.validate_on_submit()):
-    # Retrieve the guide code from the form
-    guideCode = form.guide_code.data
+    # Retrieve the guide from the form
+    guideName = form.guide_name.data
     # Delete the guide from mongoDB
-    mongodb_fyp_db.guides.delete_one({ "guide_code": guideCode })
+    mongodb_fyp_db.guides.delete_one({ "guide_name": guideName })
     # Flash Message: guide deleted
     flash('The guide has been deleted!', 'success')
     # Return
@@ -310,16 +309,16 @@ def instructorGuideDelete():
 
 
 # View a list of all exercises in a given guide
-@app.route('/instructor/guide/<guide_code>', methods = ['GET', 'POST'])
+@app.route('/instructor/guide/<guide_name>', methods = ['GET', 'POST'])
 @login_required
-def instructorGuide(guide_code):
+def instructorGuide(guide_name):
   # Check if the person logged in is an instructor
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
 
   # Get the guide from MongoDB
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
-  # Check if 'guide_code' is correct and a guide is found
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(guide_name)} )
+  # Check if 'guide_name' is correct and a guide is found
   if(guideFromDb is None):
     return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
@@ -327,45 +326,45 @@ def instructorGuide(guide_code):
 
 
 # Create a new exercise for a given guide
-@app.route('/instructor/guide/<guide_code>/createExercise')
+@app.route('/instructor/guide/<guide_name>/createExercise')
 @login_required
-def instructorCreateExercise(guide_code):
+def instructorCreateExercise(guide_name):
   # Check if the person logged in is an instructor
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
 
   # Get the guide from MongoDB
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
-  # Check if 'guide_code' is correct and a guide is found
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(guide_name)} )
+  # Check if 'guide_name' is correct and a guide is found
   if(guideFromDb is None):
     return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
   # Increment 'number_of_exercises' in MongoDB
   # Update number_of_exercises in mongoDB
   updated_number_of_exercises = guideFromDb['number_of_exercises'] + 1
-  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
+  mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
 
   # Add a new empty list to 'guide_content' in MongoDB
-  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$push": { "guide_content": [] } })
+  mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$push": { "guide_content": [] } })
 
   # Update 'last_edited_time' in MongoDB
-  mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+  mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
 
   # Return
-  return redirect(url_for('instructorGuide', guide_code = guide_code))
+  return redirect(url_for('instructorGuide', guide_name = guide_name))
 
 
 # Delete exercise from a given guide
-@app.route('/instructor/guide/<guide_code>/deleteExercise/<exercise_number>')
+@app.route('/instructor/guide/<guide_name>/deleteExercise/<exercise_number>')
 @login_required
-def instructorDeleteExercise(guide_code, exercise_number):
+def instructorDeleteExercise(guide_name, exercise_number):
   # Check if the person logged in is an instructor
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
   
   # Get the guide from MongoDB
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
-  # Check if 'guide_code' is correct and a guide is found
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(guide_name)} )
+  # Check if 'guide_name' is correct and a guide is found
   if(guideFromDb is None):
     return render_template('pageNotFound.html', page_title = 'Page Not Found')
   
@@ -378,39 +377,39 @@ def instructorDeleteExercise(guide_code, exercise_number):
 
   try:
     # Delete the exercise / needs two steps to delete by index
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$unset": { "guide_content." + str(int(exercise_number) - 1): 1 }})
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$pull": { "guide_content": None }})
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$unset": { "guide_content." + str(int(exercise_number) - 1): 1 }})
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$pull": { "guide_content": None }})
 
     # Decrease the number of exercises by 1
     updated_number_of_exercises = guideFromDb['number_of_exercises'] - 1
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
 
     # Update 'last_edited_time' in MongoDB
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
 
     # Flash Message: guide updated
     flash(f'Deleted exercise {exercise_number}. The order of exercises has been updated!', 'success')
     # Return
-    return redirect(url_for('instructorGuide', guide_code = guide_code))
+    return redirect(url_for('instructorGuide', guide_name = guide_name))
   except Exception as e:
     # Flash Message: error
     flash(f'Failed to delete exercise "{exercise_number}"! ({e})', 'danger')
     # Return
-    return redirect(url_for('instructorGuide', guide_code = guide_code))
+    return redirect(url_for('instructorGuide', guide_name = guide_name))
 
 
 # Edit a given exercise in a given guide
-@app.route('/instructor/guide/<guide_code>/exercise/<exercise_number>', methods = ['GET', 'POST'])
+@app.route('/instructor/guide/<guide_name>/exercise/<exercise_number>', methods = ['GET', 'POST'])
 @login_required
-def instructorEditExercise(guide_code, exercise_number):
+def instructorEditExercise(guide_name, exercise_number):
   # Check if the person logged in is an instructor
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
 
-  # Get the guide based on the code
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  # Get the guide based on the name
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(guide_name)} )
 
-  # Check if 'guide_code' is correct and a guide is found
+  # Check if 'guide_name' is correct and a guide is found
   if(guideFromDb is None):
     return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
@@ -427,20 +426,18 @@ def instructorEditExercise(guide_code, exercise_number):
     guideExerciseString = request.values.get('guide')
     guide = json.loads(guideExerciseString)
     # Update guide_content in MongoDB
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "guide_content." + str((int(exercise_number) - 1)): guide['ops'] } })
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "guide_content." + str((int(exercise_number) - 1)): guide['ops'] } })
     # Update guide last_edited_time
-    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+    mongodb_fyp_db.guides.update_one({ "guide_name": guideFromDb['guide_name'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
     # Flash Message: guide updated
     flash(f'The "{guideFromDb["guide_name"]}" guide has been updated!', 'success')
     # Return
-    return redirect(url_for('instructorGuide', guide_code = guide_code))
+    return redirect(url_for('instructorGuide', guide_name = guide_name))
 
   # Render the guide in QuillJS using javascript the the 'guideFromDb' variable passed into the template
   # NOTE: 'guideContent' must use json.dumps
-  try:
-    return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
-  except:
-    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], exercise_number = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
+
 
 
 # Classes Menu
@@ -457,7 +454,7 @@ def instructorClasses():
   listOfClasses = []
   # Add relevant info for all classes to list
   for theClass in allClasses:
-    listOfClasses.append({'class_id': theClass['_id'], 'start_date': theClass['start_date'], 'finish_date': theClass['finish_date'], 'instructor_email': theClass['instructor_email'], 'guide_code': theClass['guide_code'], 'student_emails': theClass['student_emails']})
+    listOfClasses.append({'class_id': theClass['_id'], 'start_date': theClass['start_date'], 'finish_date': theClass['finish_date'], 'instructor_email': theClass['instructor_email'], 'guide_name': theClass['guide_name'], 'student_emails': theClass['student_emails']})
 
   # Re-order the list by start_date
   orderedClasses = sorted(listOfClasses, key=lambda k: k['start_date']) 
@@ -493,16 +490,16 @@ def instructorClassCreate():
   # MongoDB
   mongoClient = pymongo.MongoClient()
   mongodb_fyp_db = mongoClient.fyp_db
-  # Get the guide with the passed in code from the database
+  # Get the guide with the passed in name from the database
   guides = mongodb_fyp_db.guides.find()
   mongoClient.close()
   for i in guides:
-    guideData.append((i['guide_code'], i['guide_name']))
+    guideData.append((i['guide_name'], i['guide_name']))
 
   # Create Class Form
   form = CreateClassForm()
   form.instructor_email.choices = instructorData
-  form.guide_code.choices = guideData
+  form.guide_name.choices = guideData
   
   # POST
   if(form.validate_on_submit()):
@@ -512,10 +509,10 @@ def instructorClassCreate():
     classFinishDate = form.finish_date.data
     classFinishDateDT = datetime.combine(classFinishDate, datetime.min.time())
     instructorEmail = form.instructor_email.data
-    guideCode = form.guide_code.data
+    guideName = form.guide_name.data
 
     # Store the initial class to MongoDB
-    info = {'start_date': classStartDateDT, 'finish_date': classFinishDateDT, 'instructor_email': str(instructorEmail), 'guide_code': str(guideCode), 'student_emails': []}
+    info = {'start_date': classStartDateDT, 'finish_date': classFinishDateDT, 'instructor_email': str(instructorEmail), 'guide_name': str(guideName), 'student_emails': []}
     mongodb_fyp_db.classes.insert_one(info)
     # Flash Message: class created
     flash('The class has been created!', 'success')
@@ -614,7 +611,7 @@ def instructorDeleteClass(class_id):
     # Remove the class
     mongodb_fyp_db.classes.delete_one({ "_id": ObjectId(class_id) })
     # Flash Message: class deleted
-    flash(f'[{theClass["guide_code"]}] Class deleted!', 'info')
+    flash(f'[{theClass["guide_name"]}] Class deleted!', 'info')
     # Return
     return redirect(url_for('instructorClasses'))
   except:
@@ -640,7 +637,7 @@ def instructorClassDashboard(class_id):
   classStats = mongodb_fyp_db.statistics.find({"class_id": ObjectId(class_id)})
 
   # Statistics data
-  classGuide = mongodb_fyp_db.guides.find_one({'guide_code': theClass['guide_code']})
+  classGuide = mongodb_fyp_db.guides.find_one({'guide_name': theClass['guide_name']})
   numberOfExercisesInClass = len(classGuide['guide_content'])
   # get latest data for each student
   latestExerciseProgressStats = {}
@@ -678,9 +675,9 @@ def instructorClassDashboard(class_id):
 #---------#
 
 # View guide exercise
-@app.route('/student/class/<class_id>/guide/<guide_code>/exercise/<exercise_number>', methods=['GET','POST'])
+@app.route('/student/class/<class_id>/guide/<guide_name>/exercise/<exercise_number>', methods=['GET','POST'])
 @login_required
-def studentGuideExercise(class_id, guide_code, exercise_number):
+def studentGuideExercise(class_id, guide_name, exercise_number):
   # Check if the person logged in is an student
   if(current_user.role != 'student'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
@@ -693,10 +690,10 @@ def studentGuideExercise(class_id, guide_code, exercise_number):
   if(current_user.email not in theClass['student_emails']):
     return render_template('accessDenied.html', page_title = 'Access Denied')
 
-  # Get the guide based on the code
-  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  # Get the guide based on the name
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(guide_name)} )
 
-  # Check if 'guide_code' is correct and a guide is found
+  # Check if 'guide_name' is correct and a guide is found
   if(guideFromDb is None):
     return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
@@ -721,11 +718,11 @@ def studentGuideExercise(class_id, guide_code, exercise_number):
     n_exercise_number = int(exercise_number) + 1
 
   # Gather statistics and store them to MongoDB
-  info = {'class_id': ObjectId(class_id), 'guide_code': guide_code, 'exercise_number': exercise_number, 'student_email': current_user.email, 'student_name': current_user.full_name, 'statistic_type': 'exercise_progress', 'statistic_date': datetime.utcnow()}
+  info = {'class_id': ObjectId(class_id), 'guide_name': guide_name, 'exercise_number': exercise_number, 'student_email': current_user.email, 'student_name': current_user.full_name, 'statistic_type': 'exercise_progress', 'statistic_date': datetime.utcnow()}
   mongodb_fyp_db.statistics.insert_one(info)
 
   # Return the guide and exercise to the student
-  return render_template('studentGuideExercise.html', p_exercise_number = p_exercise_number, n_exercise_number = n_exercise_number, guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, class_id = class_id, page_title = "{}".format(guideFromDb['guide_name']))
+  return render_template('studentGuideExercise.html', p_exercise_number = p_exercise_number, n_exercise_number = n_exercise_number, guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], exerciseNumber = exercise_number, class_id = class_id, page_title = "{}".format(guideFromDb['guide_name']))
 
 
 # View guide exercise
@@ -774,17 +771,17 @@ def instructor():
   return render_template('instructor.html', student_stats = allInfoItems, student_feedback = allFeedbackItems, page_title = "Instructor Dashboard")
 
 
-@app.route('/guide/<guide_code>/<exercise_number>', methods=['GET','POST'])
+@app.route('/guide/<guide_name>/<exercise_number>', methods=['GET','POST'])
 @login_required
-def guide(guide_code, exercise_number):
+def guide(guide_name, exercise_number):
   try:
     # First Summary, when the end of guide is reached
     if(exercise_number == 'summary'):
       # Redirect to guideSummary()
       return redirect(url_for('guideSummary'))
 
-    # Read guide from DB based on 'guide_code' and 'exercise_number' in URL
-    guide = mongodb_fyp_mvp.guides.find_one( {"guide_code": guide_code} )
+    # Read guide from DB based on 'guide_name' and 'exercise_number' in URL
+    guide = mongodb_fyp_mvp.guides.find_one( {"guide_name": guide_name} )
 
     # Extract only the exercise wanted from the array
     exercise = guide["guide_content"][int(exercise_number)]
@@ -811,37 +808,37 @@ def guide(guide_code, exercise_number):
     # On submit Feedback (POST)
     if feedbackForm.feedbackSubmit.data and feedbackForm.validate_on_submit():
       # Store feedback in MongoDB_fyp_mvp (POST)
-      feedbackToStore = {'student_feedback_type': 'exercise_feedback', 'student_feedback': str(feedbackForm.feedback.data), 'guide_code': guide_code, 'exercise_number': exercise_number}
+      feedbackToStore = {'student_feedback_type': 'exercise_feedback', 'student_feedback': str(feedbackForm.feedback.data), 'guide_name': guide_name, 'exercise_number': exercise_number}
       mongodb_fyp_mvp.studentFeedback.insert_one(feedbackToStore)
 
       # Flash Message: feedback sent
       flash('Feedback Sent!', 'success')
 
       # Return (POST)
-      return render_template('guide.html', exercise = exercise, current_exercise_number = c_exercise_number, previous_exercise_number = p_exercise_number, next_exercise_number = n_exercise_number, guide_code = guide_code, url_root = request.url_root, form = feedbackForm, pause_form = pauseForm)
+      return render_template('guide.html', exercise = exercise, current_exercise_number = c_exercise_number, previous_exercise_number = p_exercise_number, next_exercise_number = n_exercise_number, guide_name = guide_name, url_root = request.url_root, form = feedbackForm, pause_form = pauseForm)
 
     # On submit Pause (POST)
     if pauseForm.indicatePauseSubmit.data and pauseForm.validate_on_submit():
       # Store statiatics info to DB (POST)
-      info = {'action': 'pause', 'guide_code': guide_code, 'exercise_number': exercise_number, 'time': datetime.utcnow()}
+      info = {'action': 'pause', 'guide_name': guide_name, 'exercise_number': exercise_number, 'time': datetime.utcnow()}
       mongodb_fyp_mvp.studentStats.insert_one(info)
 
       # Flash Message: paused
       flash('Paused.', 'warning')
 
       # Send all the info required in 'messages' to resume in the same exercise
-      messages = json.dumps({'current_exercise_number': exercise_number, 'guide_code': guide_code, 'url_root': request.url_root})
+      messages = json.dumps({'current_exercise_number': exercise_number, 'guide_name': guide_name, 'url_root': request.url_root})
       session['messages'] = messages
 
       # Return (POST)
       return redirect(url_for('guidePause', messages=messages))
 
     # Store statiatics info to DB
-    info = {'action': 'exercise', 'guide_code': guide_code, 'exercise_number': exercise_number, 'time': datetime.utcnow()}
+    info = {'action': 'exercise', 'guide_name': guide_name, 'exercise_number': exercise_number, 'time': datetime.utcnow()}
     mongodb_fyp_mvp.studentStats.insert_one(info)
 
     # Return
-    return render_template('guide.html', exercise = exercise, current_exercise_number = c_exercise_number, previous_exercise_number = p_exercise_number, next_exercise_number = n_exercise_number, guide_code = guide_code, url_root = request.url_root, form = feedbackForm, pause_form = pauseForm)
+    return render_template('guide.html', exercise = exercise, current_exercise_number = c_exercise_number, previous_exercise_number = p_exercise_number, next_exercise_number = n_exercise_number, guide_name = guide_name, url_root = request.url_root, form = feedbackForm, pause_form = pauseForm)
 
   except Exception as e:
     return ("Page not found: {}".format(e))
@@ -875,7 +872,7 @@ def guideSummary():
   # On submit Feedback (POST)
   if feedbackForm.feedbackSubmit.data and feedbackForm.validate_on_submit():
     # Store feedback in MongoDB (POST)
-    feedbackToStore = {'student_feedback_type': 'class_feedback', 'student_feedback': str(feedbackForm.feedback.data), 'guide_code': 'guide_code', 'exercise_number': 'class feedback'}
+    feedbackToStore = {'student_feedback_type': 'class_feedback', 'student_feedback': str(feedbackForm.feedback.data), 'guide_name': 'guide_name', 'exercise_number': 'class feedback'}
     mongodb_fyp_mvp.studentFeedback.insert_one(feedbackToStore)
 
     # Show flask message and return home (POST)

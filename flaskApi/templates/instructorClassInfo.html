@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="content-section">
-  <legend class="border-bottom mb-2 text-center"><span class="fa fa-users mr-3"></span>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }} - {{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }} [{{ theClass['guide_code'] }}]</legend>
+  <legend class="border-bottom mb-2 text-center"><span class="fa fa-users mr-3"></span>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }} - {{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }} [{{ theClass['guide_name'] }}]</legend>
 </div>
 
 <div class="content-section">
@@ -48,7 +48,7 @@
       <td><strong>Finish Date: </strong>{{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }}</td>
     </tr>
     <tr>
-      <td><strong>Guide Code: </strong>{{ theClass['guide_code'] }}</td>
+      <td><strong>Guide: </strong>{{ theClass['guide_name'] }}</td>
     </tr>
     <tr>
       <td><strong>Instructor Email: </strong>{{ theClass['instructor_email'] }}</td>

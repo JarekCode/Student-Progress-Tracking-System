@@ -75,7 +75,6 @@ class ResetPasswordForm(FlaskForm):
 class CreateGuideForm(FlaskForm):
   # Form fields
   guide_name = StringField('Guide Name', validators=[DataRequired()])
-  guide_code = StringField('Guide Code', validators=[DataRequired()])
   create_guide_form_submit = SubmitField('Create Guide')
 
   # Validate if an guide with the entered name already exists in the database
@@ -89,39 +88,26 @@ class CreateGuideForm(FlaskForm):
     
     # if it is not None, then it is in the database, then return error message
     if(name_res):
-      raise ValidationError(f'The guide name "{guide_name.data}" already exists in the database.')
-
-  # Validate if an guide with the entered code already exists in the database
-  def validate_guide_code(self, guide_code):
-    # MongoDB
-    mongoClient = pymongo.MongoClient()
-    mongodb_fyp_db = mongoClient.fyp_db
-    # Get the guide with the passed in code from the database
-    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
-    mongoClient.close()
-    
-    # if it is not None, then it is in the database, then return error message
-    if(code_res):
-      raise ValidationError(f'The guide code "{guide_code.data}" already exists in the database.')
+      raise ValidationError(f'The guide "{guide_name.data}" already exists in the database.')
 
 
 class DeleteGuideForm(FlaskForm):
   # Form fields
-  guide_code = StringField('Guide Code', validators=[DataRequired()])
+  guide_name = StringField('Guide Name', validators=[DataRequired()])
   delete_guide_form_submit = SubmitField('Delete Guide')
 
-  # Validate if an guide with the entered code already exists in the database
-  def validate_guide_code(self, guide_code):
+  # Validate if an guide with the entered name already exists in the database
+  def validate_guide_name(self, guide_name):
     # MongoDB
     mongoClient = pymongo.MongoClient()
     mongodb_fyp_db = mongoClient.fyp_db
-    # Get the guide with the passed in code from the database
-    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
+    # Get the guide with the passed in name from the database
+    name_res = mongodb_fyp_db.guides.find_one( {'guide_name': guide_name.data} )
     mongoClient.close()
 
-    # if result is  None, then a guide with this code does not exist in the database
-    if(code_res is None):
-      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database.')
+    # if result is  None, then a guide with this name does not exist in the database
+    if(name_res is None):
+      raise ValidationError(f'The guide "{guide_name.data}" does not exists in the database.')
 
 
 class CreateClassForm(FlaskForm):
@@ -129,7 +115,7 @@ class CreateClassForm(FlaskForm):
   start_date = DateField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
   finish_date = DateField('Finish Date', format='%Y-%m-%d', validators=[DataRequired()])
   instructor_email = SelectField('Instructor', validators=[DataRequired()])
-  guide_code = SelectField('Guide', validators=[DataRequired()])
+  guide_name = SelectField('Guide', validators=[DataRequired()])
   create_class_form_submit = SubmitField('Create Class')
 
   # Validate if an account with email passed in is already in the database
@@ -143,18 +129,18 @@ class CreateClassForm(FlaskForm):
     if(user.role != 'instructor'):
       raise ValidationError('This email address is not a valid instructor email.')
 
-  # Validate if an guide with the entered code already exists in the database
-  def validate_guide_code(self, guide_code):
+  # Validate if an guide with the entered name already exists in the database
+  def validate_guide_name(self, guide_name):
     # MongoDB
     mongoClient = pymongo.MongoClient()
     mongodb_fyp_db = mongoClient.fyp_db
-    # Get the guide with the passed in code from the database
-    code_res = mongodb_fyp_db.guides.find_one( {'guide_code': guide_code.data} )
+    # Get the guide with the passed in name from the database
+    name_res = mongodb_fyp_db.guides.find_one( {'guide_name': guide_name.data} )
     mongoClient.close()
 
-    # if result is  None, then a guide with this code does not exist in the database
-    if(code_res is None):
-      raise ValidationError(f'The guide code "{guide_code.data}" does not exists in the database.')
+    # if result is  None, then a guide with this name does not exist in the database
+    if(name_res is None):
+      raise ValidationError(f'The guide "{guide_name.data}" does not exists in the database.')
 
 
 class AddStudentToClassForm(FlaskForm):
