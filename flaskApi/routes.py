@@ -354,6 +354,51 @@ def instructorCreateExercise(guide_code):
   # Return
   return redirect(url_for('instructorGuide', guide_code = guide_code))
 
+
+# Delete exercise from a given guide
+@app.route('/instructor/guide/<guide_code>/deleteExercise/<exercise_number>')
+@login_required
+def instructorDeleteExercise(guide_code, exercise_number):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  
+  # Get the guide from MongoDB
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+  # Check if 'guide_code' is correct and a guide is found
+  if(guideFromDb is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  
+  # Check if the exercise number is in the range of the actual guide stored in MongoDB
+  try:
+    if(int(exercise_number) <= 0 or int(exercise_number) > int(guideFromDb['number_of_exercises'])):
+      return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  except:
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  try:
+    # Delete the exercise / needs two steps to delete by index
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$unset": { "guide_content." + str(int(exercise_number) - 1): 1 }})
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$pull": { "guide_content": None }})
+
+    # Decrease the number of exercises by 1
+    updated_number_of_exercises = guideFromDb['number_of_exercises'] - 1
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "number_of_exercises": updated_number_of_exercises } })
+
+    # Update 'last_edited_time' in MongoDB
+    mongodb_fyp_db.guides.update_one({ "guide_code": guideFromDb['guide_code'] }, { "$set": { "last_edited_time": datetime.utcnow() } })
+
+    # Flash Message: guide updated
+    flash(f'Deleted exercise {exercise_number}. The order of exercises has been updated!', 'success')
+    # Return
+    return redirect(url_for('instructorGuide', guide_code = guide_code))
+  except Exception as e:
+    # Flash Message: error
+    flash(f'Failed to delete exercise "{exercise_number}"! ({e})', 'danger')
+    # Return
+    return redirect(url_for('instructorGuide', guide_code = guide_code))
+
+
 # Edit a given exercise in a given guide
 @app.route('/instructor/guide/<guide_code>/exercise/<exercise_number>', methods = ['GET', 'POST'])
 @login_required
@@ -392,20 +437,10 @@ def instructorEditExercise(guide_code, exercise_number):
 
   # Render the guide in QuillJS using javascript the the 'guideFromDb' variable passed into the template
   # NOTE: 'guideContent' must use json.dumps
-  return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
-
-
-#---------#
-#  TO-DO  #
-#---------#
-# Delete exercise from a given guide
-@app.route('/instructor/<guide_code>/deleteExercise')
-@login_required
-def instructorDeleteExercise(guide_code):
-  # Check if the person logged in is an instructor
-  if(current_user.role != 'instructor'):
-    return render_template('accessDenied.html', page_title = 'Access Denied')
-  return render_template('accessDenied.html', page_title = 'Access Denied')
+  try:
+    return render_template('instructorGuideExerciseEdit.html', guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, page_title = "{} - Edit".format(guideFromDb['guide_name']))
+  except:
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
 
 
 # Classes Menu
@@ -447,8 +482,27 @@ def instructorClassCreate():
   if(current_user.role != 'instructor'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
 
+  # Get all the instructors into a list
+  instructorData = []
+  instructors = User.query.filter_by(role = 'instructor')
+  for i in instructors:
+    instructorData.append((i.email, i.full_name))
+  
+  # Get all the guides into a list
+  guideData = []
+  # MongoDB
+  mongoClient = pymongo.MongoClient()
+  mongodb_fyp_db = mongoClient.fyp_db
+  # Get the guide with the passed in code from the database
+  guides = mongodb_fyp_db.guides.find()
+  mongoClient.close()
+  for i in guides:
+    guideData.append((i['guide_code'], i['guide_name']))
+
   # Create Class Form
   form = CreateClassForm()
+  form.instructor_email.choices = instructorData
+  form.guide_code.choices = guideData
   
   # POST
   if(form.validate_on_submit()):
@@ -570,19 +624,140 @@ def instructorDeleteClass(class_id):
     return redirect(url_for('instructorClasses'))
 
 
+# Instructor class dashboard
+@app.route('/instructor/class/<class_id>/dashboard')
+@login_required
+def instructorClassDashboard(class_id):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  
+  # Get all statistics for the class
+  classStats = mongodb_fyp_db.statistics.find({"class_id": ObjectId(class_id)})
+
+  # Statistics data
+  classGuide = mongodb_fyp_db.guides.find_one({'guide_code': theClass['guide_code']})
+  numberOfExercisesInClass = len(classGuide['guide_content'])
+  # get latest data for each student
+  latestExerciseProgressStats = {}
+  for i in classStats:
+    if(i['student_email'] not in latestExerciseProgressStats.keys()):
+      latestExerciseProgressStats[i['student_email']] = i
+    else:
+      if(i['statistic_date'] > latestExerciseProgressStats[i['student_email']]['statistic_date']):
+        latestExerciseProgressStats[i['student_email']] = i
+  
+  # Chart data
+  try:
+    exercisesList = []
+    studentNames = []
+    studentExerciseData = []
+
+    for i in range(numberOfExercisesInClass):
+      exercisesList.append(i)
+
+    for i in latestExerciseProgressStats:
+      studentNames.append(str(latestExerciseProgressStats[i]['student_name']))
+      studentExerciseData.append(int(latestExerciseProgressStats[i]['exercise_number']))
+  except Exception as e:
+    # Flash Message: error
+    flash(f'Failed to process graph data! "{e}"', 'danger')
+
+  # Get current time
+  updateTime = datetime.utcnow()
+
+  # Return
+  return render_template('instructorClassDashboard.html',exercisesList = exercisesList, studentNames = studentNames, studentExerciseData = studentExerciseData, latestStats = latestExerciseProgressStats, numberOfExercisesInClass = numberOfExercisesInClass, updateTime= updateTime, page_title = 'Dashboard')
 
 #---------#
 # Student #
 #---------#
 
-@app.route('/student/guide/<guide_code>/exercise/<exercise_number>', methods=['GET','POST'])
+# View guide exercise
+@app.route('/student/class/<class_id>/guide/<guide_code>/exercise/<exercise_number>', methods=['GET','POST'])
 @login_required
-def studentGuide(guide_code, exercise_number):
+def studentGuideExercise(class_id, guide_code, exercise_number):
   # Check if the person logged in is an student
   if(current_user.role != 'student'):
     return render_template('accessDenied.html', page_title = 'Access Denied')
+  
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  
+  if(current_user.email not in theClass['student_emails']):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+
+  # Get the guide based on the code
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_code": str(guide_code)} )
+
+  # Check if 'guide_code' is correct and a guide is found
+  if(guideFromDb is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  # Check if the exercise number is in the range of the actual guide stored in MongoDB
+  try:
+    if(int(exercise_number) <= 0 or int(exercise_number) > int(guideFromDb['number_of_exercises'])):
+      return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  except:
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+
+  # Calculate Exercise Numbers
+  # If 0, then can't go to negative
+  if(int(exercise_number) == 0):
+    n_exercise_number = int(exercise_number) + 1
+    p_exercise_number = 0
+  # If last exercise, go to summary at the end
+  elif(int(exercise_number) == len(guideFromDb["guide_content"])):
+    n_exercise_number = 'summary'
+    p_exercise_number = int(exercise_number) - 1
+  else:
+    p_exercise_number = int(exercise_number) - 1
+    n_exercise_number = int(exercise_number) + 1
+
+  # Gather statistics and store them to MongoDB
+  info = {'class_id': ObjectId(class_id), 'guide_code': guide_code, 'exercise_number': exercise_number, 'student_email': current_user.email, 'student_name': current_user.full_name, 'statistic_type': 'exercise_progress', 'statistic_date': datetime.utcnow()}
+  mongodb_fyp_db.statistics.insert_one(info)
+
+  # Return the guide and exercise to the student
+  return render_template('studentGuideExercise.html', p_exercise_number = p_exercise_number, n_exercise_number = n_exercise_number, guideContent = json.dumps(guideFromDb['guide_content'][(int(exercise_number) - 1)]), guideName = guideFromDb['guide_name'], guideCode = guideFromDb['guide_code'], exerciseNumber = exercise_number, class_id = class_id, page_title = "{}".format(guideFromDb['guide_name']))
 
 
+# View guide exercise
+@app.route('/student/classes')
+@login_required
+def studentClasses():
+  # Check if the person logged in is an student
+  if(current_user.role != 'student'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  
+  # Check if the logged in student has any classes they are enrolled in
+  allClasssesFromDB = mongodb_fyp_db.classes.find()
+  listOfEnrolledClasses = []
+  for c in allClasssesFromDB:
+    if(current_user.email in c['student_emails']):
+      listOfEnrolledClasses.append(c)
+  
+  # Sort the classes into upcoming/ongoing and past classes
+  orderedClasses = sorted(listOfEnrolledClasses, key=lambda k: k['start_date']) 
+
+  normalClasses = []
+  pastClasses = []
+
+  currentTime = datetime.utcnow()
+  for c in orderedClasses:
+    if(c['finish_date'] < currentTime):
+      pastClasses.append(c)
+    else:
+      normalClasses.append(c)
+
+  # Return
+  return render_template('studentClasses.html', page_title = 'Classes', listOfClasses = normalClasses, listOfPastClasses = pastClasses)
 
 
 # For later development

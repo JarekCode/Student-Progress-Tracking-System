@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+  <!-- Include stylesheet -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <div class="content-section">
+    <legend class="border-bottom mb-4 text-center"><span class="fa fa-book mr-3"></span>{{ guideName }} | Exercise {{exerciseNumber}}</legend>
+    <div id="editor-container"></div>
+  </div>
+
+  {% if exerciseNumber == "1" %}
+  {% else %}
+  <a class="btn btn-outline-primary float-left" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_code = guideCode, exercise_number = p_exercise_number) }}">Previous Exercise</a>
+  {% endif %}
+  <a class="btn btn-outline-primary float-right" role="button" href="{{ url_for('studentGuideExercise', class_id = class_id, guide_code = guideCode, exercise_number = n_exercise_number) }}">Next Exercise</a>
+
+
+  <!-- Include the Quill library -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+  <!-- Initialize Quill editor -->
+  <script>
+    var Delta = Quill.import('delta');
+    var quill = new Quill('#editor-container');
+    quill.setContents({{ guideContent|safe }});
+    quill.disable();
+
+  </script>
+{% endblock content %}

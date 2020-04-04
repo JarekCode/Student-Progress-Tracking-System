@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.fields.html5 import DateField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flaskApi.models import User
@@ -128,12 +128,12 @@ class CreateClassForm(FlaskForm):
   # Form fields
   start_date = DateField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
   finish_date = DateField('Finish Date', format='%Y-%m-%d', validators=[DataRequired()])
-  instructor_email = StringField('Instructor Email', validators=[DataRequired(), Email()])
-  guide_code = StringField('Guide Code', validators=[DataRequired()])
+  instructor_email = SelectField('Instructor', validators=[DataRequired()])
+  guide_code = SelectField('Guide', validators=[DataRequired()])
   create_class_form_submit = SubmitField('Create Class')
 
   # Validate if an account with email passed in is already in the database
-  def validate_email(self, email):
+  def validate_instructor_email(self, email):
     # Get user from database by email. Will be None if email not taken
     user = User.query.filter_by(email = email.data.lower()).first()
     # If user is None, the email address does not exist in the database
@@ -161,7 +161,7 @@ class AddStudentToClassForm(FlaskForm):
   # Form fields
   student_email = StringField('Student Email', validators=[DataRequired(), Email()])
   add_student_to_class_form_submit = SubmitField('Add Student')
-  # No email is database validation as the stundet might not yet have an account
+  # No email in database validation as the stundet might not yet have an account
 
 
 # For later development

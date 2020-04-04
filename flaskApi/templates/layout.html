@@ -40,7 +40,7 @@
         <li><a href="/"><span class="fa fa-home mr-3"></span> Home</a></li>
         {% if current_user.is_authenticated %}
           {% if current_user.role == 'student' %}
-            <li><a href="#"><span class="fa fa-users mr-3"></span> Classes</a></li>
+            <li><a href="{{ url_for('studentClasses') }}"><span class="fa fa-users mr-3"></span> Classes</a></li>
             <li><a href="#"><span class="fa fa-book mr-3"></span> Guides</a></li>
             <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
             <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
