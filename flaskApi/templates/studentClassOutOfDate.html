@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+
+{% if outOfDateType == 'early' %}
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center">You are early!</legend>
+  <p class="text-center">The class has not yet started. Please come back during the assigned class time.</p>
+</div>
+{% elif outOfDateType == 'past' %}
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center">Class is now over!</legend>
+  <p class="text-center">The class is now over. You can view the class content <a href="{{ url_for('studentGuides') }}">here</a>.</p>
+</div>
+{% else %}
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center">Class currently not available.</legend>
+  <p class="text-center">The class is currently not available. You can view your previous guides <a href="{{ url_for('studentGuides') }}">here</a>.</p>
+</div>
+{% endif %}
+
+{% endblock content %}

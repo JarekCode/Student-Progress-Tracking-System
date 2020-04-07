@@ -13,9 +13,9 @@ def load_user(user_id):
 # https://flask-login.readthedocs.io/en/latest/#flask_login.UserMixin
 class User(db.Model, UserMixin):
   id = db.Column(db.Integer, primary_key = True)
-  full_name = db.Column(db.String(30), unique = True, nullable = False)
-  email = db.Column(db.String(130), unique = True, nullable = False)
-  password = db.Column(db.String(60), nullable = False)
+  full_name = db.Column(db.String(32), nullable = False)
+  email = db.Column(db.String(64), unique = True, nullable = False)
+  password = db.Column(db.String(64), nullable = False)
   image_file = db.Column(db.String(20), nullable = False, default = 'default.jpg')
   role = db.Column(db.String(20), nullable = False, default = 'student')
   date_created = db.Column(db.DateTime, nullable = False, default = datetime.utcnow)

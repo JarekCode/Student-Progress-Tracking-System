@@ -9,9 +9,9 @@ import pymongo
 
 class RegisterForm(FlaskForm):
   # Form fields
-  full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=30)])
-  email = StringField('Email', validators=[DataRequired(), Email()])
-  password = PasswordField('Password', validators=[DataRequired()])
+  full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=32)])
+  email = StringField('Email', validators=[DataRequired(), Email(), Length(min=2, max=64)])
+  password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=64)])
   confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
   register_form_submit = SubmitField('Sign Up')
 
@@ -34,7 +34,7 @@ class LoginForm(FlaskForm):
 
 class UpdateAccountForm(FlaskForm):
   # Form fields
-  full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=30)])
+  full_name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=32)])
   email = StringField('Email', validators=[DataRequired(), Email()])
   profile_picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
   update_account_form_submit = SubmitField('Update')
@@ -110,13 +110,65 @@ class DeleteGuideForm(FlaskForm):
       raise ValidationError(f'The guide "{guide_name.data}" does not exists in the database.')
 
 
+class RenameGuideForm(FlaskForm):
+  # Form fields
+  guide_name = StringField('New Guide Name', validators=[DataRequired()])
+  rename_guide_form_submit = SubmitField('Create Guide')
+
+  # Validate if an guide with the entered name already exists in the database
+  def validate_guide_name(self, guide_name):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in name from the database
+    name_res = mongodb_fyp_db.guides.find_one( {'guide_name': guide_name.data} )
+    mongoClient.close()
+    
+    # if it is not None, then it is in the database, then return error message
+    if(name_res):
+      raise ValidationError(f'The guide "{guide_name.data}" already exists in the database.')
+
+
 class CreateClassForm(FlaskForm):
   # Form fields
-  start_date = DateField('Start Date', format='%Y-%m-%d', validators=[DataRequired()])
-  finish_date = DateField('Finish Date', format='%Y-%m-%d', validators=[DataRequired()])
+  start_date = DateField('Class Date', format='%Y-%m-%d', validators=[DataRequired()])
+  timezone = SelectField('Timezone', validators=[DataRequired()])
   instructor_email = SelectField('Instructor', validators=[DataRequired()])
   guide_name = SelectField('Guide', validators=[DataRequired()])
   create_class_form_submit = SubmitField('Create Class')
+
+  # Validate if an account with email passed in is already in the database
+  def validate_instructor_email(self, email):
+    # Get user from database by email. Will be None if email not taken
+    user = User.query.filter_by(email = email.data.lower()).first()
+    # If user is None, the email address does not exist in the database
+    if(user is None):
+      raise ValidationError('This email address does not exists in the database.')
+    # If user role is not instructor, that person cannot teach a class.
+    if(user.role != 'instructor'):
+      raise ValidationError('This email address is not a valid instructor email.')
+
+  # Validate if an guide with the entered name already exists in the database
+  def validate_guide_name(self, guide_name):
+    # MongoDB
+    mongoClient = pymongo.MongoClient()
+    mongodb_fyp_db = mongoClient.fyp_db
+    # Get the guide with the passed in name from the database
+    name_res = mongodb_fyp_db.guides.find_one( {'guide_name': guide_name.data} )
+    mongoClient.close()
+
+    # if result is  None, then a guide with this name does not exist in the database
+    if(name_res is None):
+      raise ValidationError(f'The guide "{guide_name.data}" does not exists in the database.')
+
+
+class EditClassForm(FlaskForm):
+  # Form fields
+  start_date = DateField('Class Date', format='%Y-%m-%d', validators=[DataRequired()])
+  timezone = SelectField('Timezone', validators=[DataRequired()])
+  instructor_email = SelectField('Instructor', validators=[DataRequired()])
+  guide_name = SelectField('Guide', validators=[DataRequired()])
+  edit_class_form_submit = SubmitField('Update Class')
 
   # Validate if an account with email passed in is already in the database
   def validate_instructor_email(self, email):

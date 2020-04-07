@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-4"><span class="fa fa-book mr-3"></span>Guides</legend>
+  {% for guide in listOfEnrolledGuides %}
+    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('studentGuide', guide_name = guide, exercise_number = 1) }}"><strong>{{ guide }}</strong></a><br>
+  {% endfor %}
+</div>
+
+{% endblock content %}

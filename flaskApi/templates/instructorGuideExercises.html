@@ -6,15 +6,32 @@
 </div>
 
 <div class="content-section">
+  <legend class="border-bottom mb-4">Rename Guide</legend>
+  <a class="btn btn-outline-primary btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorGuideRename', guide_name = guide['guide_name']) }}">Rename Guide</a>
+</div>
+
+<div class="content-section">
   <legend class="border-bottom mb-4">Create Exercise</legend>
   <a class="btn btn-outline-success btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorCreateExercise', guide_name = guide['guide_name']) }}">Create Exercise</a>
 </div>
 
 <div class="content-section">
   <legend class="border-bottom mb-4">Exercises</legend>
-  {% for i in range(1, guide['number_of_exercises'] + 1) %}
-    <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditExercise', guide_name = guide['guide_name'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong><br></a><br>
-  {% endfor %}
+  {% if guide['number_of_exercises'] == 1 %}
+    {% for i in range(1, guide['number_of_exercises'] + 1) %}
+      <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditExercise', guide_name = guide['guide_name'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong></a><br>
+    {% endfor %}
+  {% else %}
+    {% for i in range(1, guide['number_of_exercises'] + 1) %}
+      {% if i-1 <= 0 %}
+        <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditExercise', guide_name = guide['guide_name'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong></a><br><a class="btn btn-outline-dark offset-md-3 col-md-6" role="button" href="{{ url_for('instructorGuideRenarrangeExercises', guide_name = guide['guide_name'], ex_1 = i, ex_2 = i + 1) }}"><span class="fa fa-arrow-down"></span> Move Down</a><br><br><hr><br>
+      {% elif i+1 > guide['number_of_exercises'] %}
+        <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditExercise', guide_name = guide['guide_name'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong></a><br><a class="btn btn-outline-dark offset-md-3 col-md-6" role="button" href="{{ url_for('instructorGuideRenarrangeExercises', guide_name = guide['guide_name'], ex_1 = i, ex_2 = i - 1) }}"><span class="fa fa-arrow-up"></span> Move Up</a><br><br><hr><br>
+      {% else %}
+        <a class="btn btn-outline-dark btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditExercise', guide_name = guide['guide_name'], exercise_number = i) }}"><strong>Exercise {{ i }}</strong></a><br><a class="btn btn-outline-dark col-md-3 offset-md-3" role="button" href="{{ url_for('instructorGuideRenarrangeExercises', guide_name = guide['guide_name'], ex_1 = i, ex_2 = i - 1) }}"><span class="fa fa-arrow-up"></span> Move Up</a> <a class="btn btn-outline-dark col-md-3" role="button" href="{{ url_for('instructorGuideRenarrangeExercises', guide_name = guide['guide_name'], ex_1 = i, ex_2 = i + 1) }}"><span class="fa fa-arrow-down"></span> Move Down</a><br><br><hr><br>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 </div>
 
 {% endblock content %}

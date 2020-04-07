@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center"><i>{{ student_email }}</i> - Student Activity</legend>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Exercise Timings</legend>
+  <canvas id="myChart" width="300" height="100"></canvas>
+  <p class="text-right"><i>Total Seconds</i></p>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Exercise Timings</legend>
+  <table>
+    <tr>
+      <th>Exercise Number</th>
+      <th>Exercise Time</th>
+    </tr>
+    {% for i in time_dict %}
+    <tr>
+      <td>{{ i }}</td>
+      <td>{{ time_dict[i] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Exercise Activity</legend>
+  <table>
+    <tr>
+      <th>Exercise Number</th>
+      <th>Timestamp</th>
+    </tr>
+    {% for stat in student_exercise_progress_list %}
+    <tr>
+      <td>{{ stat['exercise_number'] }}</td>
+      <td>{{ stat['statistic_date'].strftime("%d") }} {{ stat['statistic_date'].strftime("%b") }} {{ stat['statistic_date'].strftime("%Y") }} {{ stat['statistic_date'].strftime("%H") }}:{{ stat['statistic_date'].strftime("%M") }}:{{ stat['statistic_date'].strftime("%S") }} (UTC)</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<script>
+// Random colors
+var dynamicColors = function() {
+  var r = Math.floor(Math.random() * 255);
+  var g = Math.floor(Math.random() * 255);
+  var b = Math.floor(Math.random() * 255);
+  return "rgb(" + r + "," + g + "," + b + ")";
+};
+var coloR = [];
+for (var i in {{ chart_data }}) {
+  coloR.push(dynamicColors());
+}
+
+var ctx = document.getElementById('myChart').getContext('2d');
+var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'doughnut',
+
+    // The data for our dataset
+    data: {
+      labels: {{ chart_labels| tojson }},
+      datasets: [{
+        label: 'Current Exercise',
+        data: {{ chart_data }},
+        backgroundColor: coloR
+      }]
+    },
+
+    // Configuration options go here
+    options: {
+      
+    }
+});
+</script>
+
+{% endblock content %}

@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center"><span class="fa fa-laptop mr-3"></span>Manage Application</legend>
+</div>
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center"><span class="fa fa-clock-o mr-3"></span>Available Timezones</legend>
+  <p class="text-right">Total: {{ timezones|length }}</p>
+  <table>
+    <tr>
+      <th>Name | Value</th>
+    </tr>
+    {% for i in timezones %}
+    <tr>
+      <td>{{ i[0] }} | {{ i[1] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p><br>Note: To Add/Remove timezones, modify "<i>secretsFile.py</i>". All timezones follow the <i>pytz</i> format.</p>
+</div>
+{% endblock content %}

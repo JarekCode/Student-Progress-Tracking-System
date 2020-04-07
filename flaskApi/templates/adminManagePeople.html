@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="content-section">
+  <legend class="border-bottom mb-4 text-center"><span class="fa fa-users mr-3"></span>Manage People</legend>
+</div>
+<div class="content-section">
+  <legend class="border-bottom mb-4">Administrators</legend>
+  <p class="text-right">Total: {{ allAdmins|length }}</p>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Date Created</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+    {% for i in allAdmins %}
+    <tr>
+      <td>{{ i.full_name }}</td>
+      <td>{{ i.email }}</td>
+      <td>{{ i.date_created.strftime("%d") }} {{ i.date_created.strftime("%b") }} {{ i.date_created.strftime("%Y") }}</td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'instructor') }}">Make Instructor</a></td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'student') }}">Make Student</a></td>
+      <td class="text-center"><a class="btn btn-outline-danger" role="button" href="{{ url_for('adminManagePeopleDeleteUser', email_address = i.email) }}">Delete Account</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Instructors</legend>
+  <p class="text-right">Total: {{ allInstructors|length }}</p>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Date Created</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+    {% for i in allInstructors %}
+    <tr>
+      <td>{{ i.full_name }}</td>
+      <td>{{ i.email }}</td>
+      <td>{{ i.date_created.strftime("%d") }} {{ i.date_created.strftime("%b") }} {{ i.date_created.strftime("%Y") }}</td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'administrator') }}">Make Administrator</a></td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'student') }}">Make Student</a></td>
+      <td class="text-center"><a class="btn btn-outline-danger" role="button" href="{{ url_for('adminManagePeopleDeleteUser', email_address = i.email) }}">Delete Account</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="content-section">
+  <legend class="border-bottom mb-4">Students</legend>
+  <p class="text-right">Total: {{ allStudents|length }}</p>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Date Created</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+    {% for i in allStudents %}
+    <tr>
+      <td>{{ i.full_name }}</td>
+      <td>{{ i.email }}</td>
+      <td>{{ i.date_created.strftime("%d") }} {{ i.date_created.strftime("%b") }} {{ i.date_created.strftime("%Y") }}</td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'administrator') }}">Make Administrator</a></td>
+      <td class="text-center"><a class="btn btn-outline-dark" role="button" href="{{ url_for('adminManagePeopleChangeRole', email_address = i.email, new_role = 'instructor') }}">Make Instructor</a></td>
+      <td class="text-center"><a class="btn btn-outline-danger" role="button" href="{{ url_for('adminManagePeopleDeleteUser', email_address = i.email) }}">Delete Account</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock content %}

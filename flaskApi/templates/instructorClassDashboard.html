@@ -17,12 +17,14 @@
       <th>Student Name</th>
       <th>Exercise Number</th>
       <th>Timestamp</th>
+      <th></th>
     </tr>
     {% for stat in latestStats %}
     <tr>
-      <td>{{ latestStats[stat]['student_name'] }} ({{ latestStats[stat]['student_email'] }})</td>
+      <td>{{ latestStats[stat]['student_name'] }} [ <i>{{ latestStats[stat]['student_email'] }}</i> ]</td>
       <td>{{ latestStats[stat]['exercise_number'] }}/{{ numberOfExercisesInClass }}</td>
       <td>{{ latestStats[stat]['statistic_date'].strftime("%d") }} {{ latestStats[stat]['statistic_date'].strftime("%b") }} {{ latestStats[stat]['statistic_date'].strftime("%Y") }} {{ latestStats[stat]['statistic_date'].strftime("%H") }}:{{ latestStats[stat]['statistic_date'].strftime("%M") }}:{{ latestStats[stat]['statistic_date'].strftime("%S") }} (UTC)</td>
+      <td class="text-center"><a class="btn btn-outline-primary" role="button" href="{{ url_for('instructorClassDashboardStudentActivity', class_id = class_id, student_email = latestStats[stat]['student_email']) }}">Student Activity</a></td>
     </tr>
     {% endfor %}
   </table>

@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="content-section">
-  <legend class="border-bottom mb-2 text-center"><span class="fa fa-users mr-3"></span>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }} - {{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }} [{{ theClass['guide_name'] }}]</legend>
+  <legend class="border-bottom mb-2 text-center"><span class="fa fa-users mr-3"></span>{{ theClass['guide_name'] }} [{{ theClass['start_date_local'].strftime("%d") }} {{ theClass['start_date_local'].strftime("%b") }} {{ theClass['start_date_local'].strftime("%Y") }} | {{ theClass['timezone'] }}]</legend>
 </div>
 
 <div class="content-section">
@@ -33,28 +33,31 @@
 </div>
 
 <div class="content-section">
-  <legend class="border-bottom mb-4">Class Information</legend>
+  <legend class="border-bottom mb-4">Class Details</legend>
   <table>
     <tr>
-      <th></th>
+      <td class="text-center"><strong>Class ID: </strong><i>{{ theClass['_id'] }}</i></td>
     </tr>
     <tr>
-      <td><strong>Class ID: </strong>{{ theClass['_id'] }}</td>
+      <td class="text-center"><strong>Number Of Students: </strong><i>{{ theClass['student_emails']|length }}</i></td>
     </tr>
     <tr>
-      <td><strong>Start Date: </strong>{{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }}</td>
+      <td class="text-center"></td>
     </tr>
     <tr>
-      <td><strong>Finish Date: </strong>{{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }}</td>
+      <td class="text-center"><strong>Guide: </strong>{{ theClass['guide_name'] }}</td>
     </tr>
     <tr>
-      <td><strong>Guide: </strong>{{ theClass['guide_name'] }}</td>
+      <td class="text-center"><strong>Instructor Email: </strong>{{ theClass['instructor_email'] }}</td>
     </tr>
     <tr>
-      <td><strong>Instructor Email: </strong>{{ theClass['instructor_email'] }}</td>
+      <td class="text-center"><strong>Start Date {{ theClass['timezone'] }}: </strong>{{ theClass['start_date_local'].strftime("%d") }} {{ theClass['start_date_local'].strftime("%b") }} {{ theClass['start_date_local'].strftime("%Y") }} {{ theClass['start_date_local'].strftime("%H") }}:{{ theClass['start_date_local'].strftime("%M") }} | <strong>UTC:</strong> {{ theClass['start_date'].strftime("%d") }} {{ theClass['start_date'].strftime("%b") }} {{ theClass['start_date'].strftime("%Y") }} {{ theClass['start_date'].strftime("%H") }}:{{ theClass['start_date'].strftime("%M") }}</td>
     </tr>
     <tr>
-      <td><strong>Number Of Students: </strong>{{ theClass['student_emails']|length }}</td>
+      <td class="text-center"><strong>Finish Date {{ theClass['timezone'] }}: </strong>{{ theClass['finish_date_local'].strftime("%d") }} {{ theClass['finish_date_local'].strftime("%b") }} {{ theClass['finish_date_local'].strftime("%Y") }} {{ theClass['finish_date_local'].strftime("%H") }}:{{ theClass['finish_date_local'].strftime("%M") }} | <strong>UTC:</strong> {{ theClass['finish_date'].strftime("%d") }} {{ theClass['finish_date'].strftime("%b") }} {{ theClass['finish_date'].strftime("%Y") }} {{ theClass['finish_date'].strftime("%H") }}:{{ theClass['finish_date'].strftime("%M") }}</td>
+    </tr>
+    <tr>
+      <td class="text-center"><a class="btn btn-outline-primary btn-block col-md-6 offset-md-3" role="button" href="{{ url_for('instructorEditClass', class_id = theClass['_id']) }}">Edit Class Details</a></td>
     </tr>
   </table>
 </div>

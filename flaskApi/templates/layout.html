@@ -4,6 +4,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'main.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename = 'favicon.ico') }}">
 
   <!-- Required meta tags -->
   <meta charset="utf-8">
@@ -37,30 +38,28 @@
         </div>
       </div>
       <ul class="list-unstyled components mb-5">
-        <li><a href="/"><span class="fa fa-home mr-3"></span> Home</a></li>
+        <li><a href="{{ url_for('home') }}"><span class="fa fa-home mr-3"></span> Home</a></li>
         {% if current_user.is_authenticated %}
           {% if current_user.role == 'student' %}
             <li><a href="{{ url_for('studentClasses') }}"><span class="fa fa-users mr-3"></span> Classes</a></li>
-            <li><a href="#"><span class="fa fa-book mr-3"></span> Guides</a></li>
-            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('studentGuides') }}"><span class="fa fa-book mr-3"></span> Guides</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-user-circle mr-3"></span> My Account</a></li>
             <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
           {% elif current_user.role == 'instructor' %}
             <li><a href="{{ url_for('instructorClasses') }}"><span class="fa fa-users mr-3"></span> Classes</a></li>
             <li><a href="{{ url_for('instructorGuides') }}"><span class="fa fa-book mr-3"></span> Guides</a></li>
-            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-user-circle mr-3"></span> My Account</a></li>
             <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
           {% elif current_user.role == 'administrator' %}
-            <li><a href="#"><span class="fa fa-users mr-3"></span> Manage Classes</a></li>
-            <li><a href="#"><span class="fa fa-cog mr-3"></span> Manage Instructors</a></li>
-            <li><a href="{{ url_for('account') }}"><span class="fa fa-cog mr-3"></span> Account</a></li>
+            <li><a href="{{ url_for('adminManageApplication') }}"><span class="fa fa-laptop mr-3"></span> Manage Application</a></li>
+            <li><a href="{{ url_for('adminManagePeople') }}"><span class="fa fa-users mr-3"></span> Manage People</a></li>
+            <li><a href="{{ url_for('account') }}"><span class="fa fa-user-circle mr-3"></span> My Account</a></li>
             <li><a href="{{ url_for('logout') }}"><span class="fa fa-sign-out mr-3"></span> Sign Out</a></li>
           {% endif %}
         {% else %}
           <li><a href="{{ url_for('login') }}"><span class="fa fa-sign-in mr-3"></span> Sign In</a></li>
           <li><a href="{{ url_for('register') }}"><span class="fa fa-sign-in mr-3"></span> Register</a></li>
         {% endif %}
-        <li><a class="nav-item nav-link" href="{{ url_for('instructor') }}">Temp Instructor</a></li>
-        <li><a class="nav-item nav-link" href="/guide/FTG/0">Temp Guide Shortcut</a></li>
       </ul>
     </nav>
     <!-- Page Content  -->
