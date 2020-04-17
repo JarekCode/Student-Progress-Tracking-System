@@ -9,6 +9,7 @@ from datetime import datetime, date, timedelta
 from PIL import Image
 from flask_mail import Message
 from bson import ObjectId
+import smtplib
 import pymongo
 import secrets
 import os
@@ -18,7 +19,6 @@ import pytz
 # MongoDB
 mongoClient = pymongo.MongoClient()
 mongodb_fyp_db = mongoClient.fyp_db
-mongodb_fyp_mvp = mongoClient.fyp_mvp
 
 #--------#
 # Errors #
@@ -187,16 +187,16 @@ def account():
 
 # Send email with password reset token
 def send_password_reset_email(user):
+  s = smtplib.SMTP()
+  s.connect(secretsFile.getItem('mailServer'), secretsFile.getItem('mailPort'))
+  s.starttls()
+  s.login(secretsFile.getItem('mailUsername'), secretsFile.getItem('mailPassword'))
+
   token = user.get_reset_password_token()
-  msg = Message('Password Reset Request', sender = secretsFile.getItem('mailUsername'), recipients = [user.email])
-  msg.body = f'''To reset your password, visit the following link:
 
-{url_for('reset_token', token = token, _external = True)}
+  msg = f'From: {secretsFile.getItem("mailEmail")}\nTo: {user.email}\nSubject: Password Reset Request\n\nTo reset your password, visit the following link:\n\n{url_for("reset_token", token = token, _external = True)}\n\nIf you did not make this request, simply ignore this email and no changes will be made.'
 
-If you did not make this request, simply ignore this email and no changes will be made.
-'''
-  # Send the email
-  mail.send(msg)
+  s.sendmail(secretsFile.getItem('mailEmail'), user.email, msg)
 
 
 # User requests to reset a password providing a new email address
@@ -379,16 +379,24 @@ def instructorGuideRename(guide_name):
   # POST
   if(form.validate_on_submit()):
     # Retrieve the guide from the form
-    guideName = form.guide_name.data
-    # Delete the guide from mongoDB
-    mongodb_fyp_db.guides.update_one({ "guide_name": guide_name }, { "$set": { "guide_name": guideName } })
-    # Flash Message: guide deleted
+    newGuideName = form.guide_name.data
+    # Update the guide
+    mongodb_fyp_db.guides.update_one({ "guide_name": guide_name }, { "$set": { "guide_name": newGuideName } })
+    # Rename all existing classes so students will not lose access after rename
+    classIDsToUpdate = []
+    allClasses = mongodb_fyp_db.classes.find()
+    for i in allClasses:
+      if(i["guide_name"] == guide_name):
+        classIDsToUpdate.append(i["_id"])
+
+    for i in classIDsToUpdate:
+      mongodb_fyp_db.classes.update_one({ "_id": ObjectId(str(i)) }, { "$set": { "guide_name": newGuideName } })
+
+    # Flash Message: guide updated
     flash('The guide name has been updated!', 'success')
     # Return
     return redirect(url_for('instructorGuides'))
   # GET
-  # Flash Message: warning
-  flash('Once the guide name is changed, all existing classes using the old guide name will no longer be valid! Students will lose access to a guide if it is renamed!', 'danger')
   # Return
   return render_template('instructorGuideRename.html', page_title = 'Rename Guide', form = form)
 
@@ -821,70 +829,7 @@ def instructorEditClass(class_id):
   return render_template('instructorClassEdit.html', page_title = 'Edit Class', form = form)
 
 
-# Instructor class dashboard
-@app.route('/instructor/class/<class_id>/dashboard')
-@login_required
-def instructorClassDashboard(class_id):
-  # Check if the person logged in is an instructor
-  if(current_user.role != 'instructor'):
-    return render_template('accessDenied.html', page_title = 'Access Denied')
-  # Check if the class exists in MongoDB
-  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
-  if(theClass is None):
-    return render_template('pageNotFound.html', page_title = 'Page Not Found')
-  
-  # Get all statistics for the class
-  classStats = mongodb_fyp_db.statistics.find({"class_id": ObjectId(class_id)})
-
-  # Statistics data
-  classGuide = mongodb_fyp_db.guides.find_one({'guide_name': theClass['guide_name']})
-  numberOfExercisesInClass = len(classGuide['guide_content'])
-  # get latest data for each student
-  latestExerciseProgressStats = {}
-  for i in classStats:
-    if(i['student_email'] not in latestExerciseProgressStats.keys()):
-      latestExerciseProgressStats[i['student_email']] = i
-    else:
-      if(i['statistic_date'] > latestExerciseProgressStats[i['student_email']]['statistic_date']):
-        latestExerciseProgressStats[i['student_email']] = i
-  
-  # Chart data
-  try:
-    exercisesList = []
-    studentNames = []
-    studentExerciseData = []
-
-    for i in range(numberOfExercisesInClass):
-      exercisesList.append(i)
-
-    for i in latestExerciseProgressStats:
-      studentNames.append(str(latestExerciseProgressStats[i]['student_name']))
-      studentExerciseData.append(int(latestExerciseProgressStats[i]['exercise_number']))
-  except Exception as e:
-    # Flash Message: error
-    flash(f'Failed to process graph data! "{e}"', 'danger')
-
-  # Get current time
-  updateTime = datetime.utcnow()
-
-  # Return
-  return render_template('instructorClassDashboard.html', exercisesList = exercisesList, studentNames = studentNames, studentExerciseData = studentExerciseData, latestStats = latestExerciseProgressStats, numberOfExercisesInClass = numberOfExercisesInClass, updateTime= updateTime, class_id = class_id, page_title = 'Dashboard')
-
-# Instructor class dashboard for individual student
-@app.route('/instructor/class/<class_id>/dashboard/student/<student_email>')
-@login_required
-def instructorClassDashboardStudentActivity(class_id, student_email):
-  # Check if the person logged in is an instructor
-  if(current_user.role != 'instructor'):
-    return render_template('accessDenied.html', page_title = 'Access Denied')
-  # Check if the class exists in MongoDB
-  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
-  if(theClass is None):
-    return render_template('pageNotFound.html', page_title = 'Page Not Found')
-  # Check if the student is in the class
-  if(student_email not in theClass['student_emails']):
-    return render_template('accessDenied.html', page_title = 'Access Denied')
-  
+def studentTimings(class_id, student_email):
   # Get student statistics
   student_exercise_progress_mongo_object = mongodb_fyp_db.statistics.find({"class_id": ObjectId(class_id), "student_email": student_email, "statistic_type": "exercise_progress"})
   student_exercise_progress_list = []
@@ -918,9 +863,114 @@ def instructorClassDashboardStudentActivity(class_id, student_email):
         td_seconds = td.total_seconds()
         time_dict[student_exercise_progress_list[i]['exercise_number']] = time_dict[student_exercise_progress_list[i]['exercise_number']] + td
         time_dict_seconds[student_exercise_progress_list[i]['exercise_number']] = time_dict_seconds[student_exercise_progress_list[i]['exercise_number']] + td_seconds
-    except Exception as e:
+    except:
       # Index out of bounds = End of student_exercise_progress_list
-      print('ERROR:', e)
+      pass
+  # Return
+  return time_dict, time_dict_seconds, student_exercise_progress_list
+
+
+# Instructor class dashboard
+@app.route('/instructor/class/<class_id>/dashboard')
+@login_required
+def instructorClassDashboard(class_id):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  
+  # Get all statistics for the class
+  classStats = mongodb_fyp_db.statistics.find({"class_id": ObjectId(class_id)})
+
+  # Statistics data
+  classGuide = mongodb_fyp_db.guides.find_one({'guide_name': theClass['guide_name']})
+  numberOfExercisesInClass = len(classGuide['guide_content'])
+  # get latest data for each student
+  latestExerciseProgressStats = {}
+  for i in classStats:
+    if(i['student_email'] not in latestExerciseProgressStats.keys()):
+      latestExerciseProgressStats[i['student_email']] = i
+    else:
+      if(i['statistic_date'] > latestExerciseProgressStats[i['student_email']]['statistic_date']):
+        latestExerciseProgressStats[i['student_email']] = i
+  
+  # Chart data 1
+  try:
+    exercisesList = []
+    studentNames = []
+    studentExerciseData = []
+
+    for i in range(numberOfExercisesInClass):
+      exercisesList.append(i)
+
+    for i in latestExerciseProgressStats:
+      studentNames.append(str(latestExerciseProgressStats[i]['student_name']))
+      studentExerciseData.append(int(latestExerciseProgressStats[i]['exercise_number']))
+  except Exception as e:
+    # Flash Message: error
+    flash(f'Failed to process graph data! "{e}"', 'danger')
+
+  # Average class statistics data
+  listOfStudentTimings = []
+
+  for email in theClass['student_emails']:
+    time_dict, time_dict_seconds, student_exercise_progress_list = studentTimings(class_id, email)
+    listOfStudentTimings.append(time_dict_seconds)
+  
+  averageStudentTimingsRaw = {}
+  exerciseCounterForAverage = {}
+  finalAverageStudentTimings = {}
+
+  for i in listOfStudentTimings:
+    for j in i:
+      if(j not in averageStudentTimingsRaw.keys()):
+        averageStudentTimingsRaw[j] = i[j]
+        exerciseCounterForAverage[j] = 1
+      else:
+        averageStudentTimingsRaw[j] += i[j]
+        exerciseCounterForAverage[j] += 1
+
+  for i in averageStudentTimingsRaw:
+    averageTime = averageStudentTimingsRaw[i] / exerciseCounterForAverage[i]
+    finalAverageStudentTimings[i] = averageTime
+  
+  # Now split finalAverageStudentTimings into labels and data for the charts
+  averageLabels = []
+  averageData = []
+  for i in finalAverageStudentTimings:
+    averageLabels.append(i)
+    averageData.append(finalAverageStudentTimings[i])
+
+  # Get current time
+  updateTime = datetime.utcnow()
+
+  # Return
+  return render_template('instructorClassDashboard.html', exercisesList = exercisesList, studentNames = studentNames, studentExerciseData = studentExerciseData, latestStats = latestExerciseProgressStats, averageLabels = averageLabels, averageData = averageData, numberOfExercisesInClass = numberOfExercisesInClass, updateTime= updateTime, class_id = class_id, page_title = 'Dashboard')
+
+# Instructor class dashboard for individual student
+@app.route('/instructor/class/<class_id>/dashboard/student/<student_email>')
+@login_required
+def instructorClassDashboardStudentActivity(class_id, student_email):
+  # Check if the person logged in is an instructor
+  if(current_user.role != 'instructor'):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  # Check if the class exists in MongoDB
+  theClass = mongodb_fyp_db.classes.find_one( {"_id": ObjectId(class_id)} )
+  if(theClass is None):
+    return render_template('pageNotFound.html', page_title = 'Page Not Found')
+  # Check if the student is in the class
+  if(student_email not in theClass['student_emails']):
+    return render_template('accessDenied.html', page_title = 'Access Denied')
+  
+  time_dict, time_dict_seconds, student_exercise_progress_list = studentTimings(class_id, student_email)
+
+  # Get the guide from db
+  guideFromDb = mongodb_fyp_db.guides.find_one( {"guide_name": str(theClass['guide_name'])} )
+  expected_number_of_activity = int(guideFromDb['number_of_exercises'])
+  expected_number_of_activity += 1
 
   chart_labels = []
   chart_data = []
@@ -930,7 +980,7 @@ def instructorClassDashboardStudentActivity(class_id, student_email):
     chart_data.append(time_dict_seconds[i])
 
   # Return
-  return render_template('instructorClassDashboardStudentActivity.html', student_exercise_progress_list = student_exercise_progress_list, time_dict = time_dict, chart_labels = chart_labels, chart_data = chart_data, student_email = student_email, page_title = 'Dashboard - {}'.format(str(student_email)))
+  return render_template('instructorClassDashboardStudentActivity.html', expected_number_of_activity = expected_number_of_activity, student_exercise_progress_list = student_exercise_progress_list, time_dict = time_dict, chart_labels = chart_labels, chart_data = chart_data, student_email = student_email, page_title = 'Dashboard - {}'.format(str(student_email)))
 
 #---------#
 # Student #

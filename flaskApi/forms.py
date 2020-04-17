@@ -113,7 +113,7 @@ class DeleteGuideForm(FlaskForm):
 class RenameGuideForm(FlaskForm):
   # Form fields
   guide_name = StringField('New Guide Name', validators=[DataRequired()])
-  rename_guide_form_submit = SubmitField('Create Guide')
+  rename_guide_form_submit = SubmitField('Rename Guide')
 
   # Validate if an guide with the entered name already exists in the database
   def validate_guide_name(self, guide_name):

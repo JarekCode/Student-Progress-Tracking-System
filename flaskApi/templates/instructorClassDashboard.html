@@ -7,7 +7,7 @@
 <br>
 <div class="content-section">
   <legend class="border-bottom mb-4">Students - Current Exercise</legend>
-  <canvas id="myChart" width="300" height="150"></canvas>
+  <canvas id="myChart1" width="300" height="150"></canvas>
 </div>
 
 <div class="content-section">
@@ -30,9 +30,18 @@
   </table>
 </div>
 
+<div class="content-section">
+  <legend class="border-bottom mb-4">Average Exercise Timings</legend>
+  <canvas id="myChart2" width="200" height="50"></canvas>
+  <p class="text-right"><i>Average Seconds</i></p>
+  <br><hr><br>
+  <canvas id="myChart3" width="300" height="150"></canvas>
+  <p class="text-right"><i>Average Seconds</i></p>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
 <script>
-var ctx = document.getElementById('myChart').getContext('2d');
+var ctx = document.getElementById('myChart1').getContext('2d');
 var chart = new Chart(ctx, {
     // The type of chart we want to create
     type: 'horizontalBar',
@@ -59,6 +68,76 @@ var chart = new Chart(ctx, {
             beginAtZero: true,
             stepSize: 1,
             suggestedMax: {{ numberOfExercisesInClass }}
+          }
+        }]
+      }
+    }
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<script>
+// Random colors
+var dynamicColors = function() {
+  var r = Math.floor(Math.random() * 255);
+  var g = Math.floor(Math.random() * 255);
+  var b = Math.floor(Math.random() * 255);
+  return "rgb(" + r + "," + g + "," + b + ")";
+};
+var coloR = [];
+for (var i in {{ averageData }}) {
+  coloR.push(dynamicColors());
+}
+
+var ctx = document.getElementById('myChart2').getContext('2d');
+var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'doughnut',
+
+    // The data for our dataset
+    data: {
+      labels: {{ averageLabels| tojson }},
+      datasets: [{
+        label: 'Exercise',
+        data: {{ averageData }},
+        backgroundColor: coloR
+      }]
+    },
+
+    // Configuration options go here
+    options: {
+      
+    }
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<script>
+var ctx = document.getElementById('myChart3').getContext('2d');
+var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'bar',
+
+    // The data for our dataset
+    data: {
+      labels: {{ averageLabels| tojson }},
+      datasets: [{
+        label: 'Exercise',
+        data: {{ averageData }},
+        backgroundColor: 'rgba(47, 137, 252, 0.5)',
+        borderColor: 'rgba(47, 137, 252, 1)',
+        borderWidth: 1
+        }]
+    },
+
+    // Configuration options go here
+    options: {
+      scales: {
+        xAxes: [{
+          stacked: true,
+          min: 0,
+          ticks: {
+            beginAtZero: true
           }
         }]
       }

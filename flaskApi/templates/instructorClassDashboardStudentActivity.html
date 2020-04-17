@@ -29,6 +29,13 @@
 
 <div class="content-section">
   <legend class="border-bottom mb-4">Exercise Activity</legend>
+  <p>
+    Activity Between Exercises: <strong>{{ student_exercise_progress_list|length }}</strong> (Expected: <strong>{{ expected_number_of_activity }}</strong>)
+    <br>
+    {% if student_exercise_progress_list|length > expected_number_of_activity %}
+    The student has moved back and forward between exercises <strong>{{ student_exercise_progress_list|length - expected_number_of_activity }}</strong> time(s).
+    {% endif %}
+  </p>
   <table>
     <tr>
       <th>Exercise Number</th>
