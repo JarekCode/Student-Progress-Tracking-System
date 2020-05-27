@@ -191,11 +191,8 @@ def send_password_reset_email(user):
   s.connect(secretsFile.getItem('mailServer'), secretsFile.getItem('mailPort'))
   s.starttls()
   s.login(secretsFile.getItem('mailUsername'), secretsFile.getItem('mailPassword'))
-
   token = user.get_reset_password_token()
-
   msg = f'From: {secretsFile.getItem("mailEmail")}\nTo: {user.email}\nSubject: Password Reset Request\n\nTo reset your password, visit the following link:\n\n{url_for("reset_token", token = token, _external = True)}\n\nIf you did not make this request, simply ignore this email and no changes will be made.'
-
   s.sendmail(secretsFile.getItem('mailEmail'), user.email, msg)
 
 
